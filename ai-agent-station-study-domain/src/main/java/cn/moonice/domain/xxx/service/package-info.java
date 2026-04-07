@@ -1,0 +1,1 @@
+package cn.moonice.domain.xxx.service;
