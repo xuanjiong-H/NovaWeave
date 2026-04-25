@@ -1,6 +1,6 @@
 package cn.moonice.infrastructure.dao;
 
-import cn.bugstack.ai.infrastructure.dao.po.AiAgentFlowConfig;
+import cn.moonice.infrastructure.dao.po.AiAgentFlowConfig;
 import org.apache.ibatis.annotations.Mapper;
 
 import java.util.List;

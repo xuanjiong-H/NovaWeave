@@ -1,6 +1,6 @@
 package cn.moonice.infrastructure.dao;
 
-import cn.bugstack.ai.infrastructure.dao.po.AiAgent;
+import cn.moonice.infrastructure.dao.po.AiAgent;
 import org.apache.ibatis.annotations.Mapper;
 
 import java.util.List;

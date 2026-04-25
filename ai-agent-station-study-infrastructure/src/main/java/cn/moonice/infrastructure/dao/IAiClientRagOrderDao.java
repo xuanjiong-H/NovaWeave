@@ -1,6 +1,6 @@
 package cn.moonice.infrastructure.dao;
 
-import cn.bugstack.ai.infrastructure.dao.po.AiClientRagOrder;
+import cn.moonice.infrastructure.dao.po.AiClientRagOrder;
 import org.apache.ibatis.annotations.Mapper;
 
 import java.util.List;
