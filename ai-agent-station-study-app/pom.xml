@@ -62,11 +62,6 @@
             <scope>test</scope>
         </dependency>
         <dependency>
-            <groupId>org.junit.vintage</groupId>
-            <artifactId>junit-vintage-engine</artifactId>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
             <groupId>io.jsonwebtoken</groupId>
             <artifactId>jjwt</artifactId>
         </dependency>
@@ -145,7 +140,7 @@
                 <artifactId>maven-surefire-plugin</artifactId>
                 <version>3.2.5</version>
                 <configuration>
-                    <skipTests>true</skipTests>
+                    <skipTests>false</skipTests>
                     <testFailureIgnore>false</testFailureIgnore>
                     <includes>
                         <include>**/*Test.java</include>

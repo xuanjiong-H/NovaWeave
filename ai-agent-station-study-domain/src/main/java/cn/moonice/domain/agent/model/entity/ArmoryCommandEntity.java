@@ -1,6 +1,9 @@
 package cn.moonice.domain.agent.model.entity;
 
+import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Data;
+import lombok.NoArgsConstructor;
 
 import java.util.List;
 
@@ -11,10 +14,13 @@ import java.util.List;
  * 2025/6/27 07:26
  */
 @Data
+@Builder
+@AllArgsConstructor
+@NoArgsConstructor
 public class ArmoryCommandEntity {
 
     /**
-     * 命令类型
+     * 命令类型 AiAgentEnumVO.getCode
      */
     private String commandType;
 

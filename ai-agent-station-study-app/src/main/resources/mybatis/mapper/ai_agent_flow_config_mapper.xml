@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
-<mapper namespace="cn.bugstack.ai.infrastructure.dao.IAiAgentFlowConfigDao">
+<mapper namespace="cn.moonice.infrastructure.dao.IAiAgentFlowConfigDao">
 
-    <resultMap id="AiAgentFlowConfigMap" type="cn.bugstack.ai.infrastructure.dao.po.AiAgentFlowConfig">
+    <resultMap id="AiAgentFlowConfigMap" type="cn.moonice.infrastructure.dao.po.AiAgentFlowConfig">
         <id column="id" property="id"/>
         <result column="agent_id" property="agentId"/>
         <result column="client_id" property="clientId"/>
@@ -10,7 +10,7 @@
         <result column="create_time" property="createTime"/>
     </resultMap>
 
-    <insert id="insert" parameterType="cn.bugstack.ai.infrastructure.dao.po.AiAgentFlowConfig" useGeneratedKeys="true" keyProperty="id">
+    <insert id="insert" parameterType="cn.moonice.infrastructure.dao.po.AiAgentFlowConfig" useGeneratedKeys="true" keyProperty="id">
         INSERT INTO ai_agent_flow_config (
             agent_id, client_id, sequence, create_time
         ) VALUES (
@@ -18,7 +18,7 @@
         )
     </insert>
 
-    <update id="updateById" parameterType="cn.bugstack.ai.infrastructure.dao.po.AiAgentFlowConfig">
+    <update id="updateById" parameterType="cn.moonice.infrastructure.dao.po.AiAgentFlowConfig">
         UPDATE ai_agent_flow_config SET
             agent_id = #{agentId},
             client_id = #{clientId},

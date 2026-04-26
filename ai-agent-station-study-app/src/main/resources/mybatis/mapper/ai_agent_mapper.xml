@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
-<mapper namespace="cn.bugstack.ai.infrastructure.dao.IAiAgentDao">
+<mapper namespace="cn.moonice.infrastructure.dao.IAiAgentDao">
 
-    <resultMap id="AiAgentMap" type="cn.bugstack.ai.infrastructure.dao.po.AiAgent">
+    <resultMap id="AiAgentMap" type="cn.moonice.infrastructure.dao.po.AiAgent">
         <id column="id" property="id"/>
         <result column="agent_id" property="agentId"/>
         <result column="agent_name" property="agentName"/>
@@ -13,7 +13,7 @@
         <result column="update_time" property="updateTime"/>
     </resultMap>
 
-    <insert id="insert" parameterType="cn.bugstack.ai.infrastructure.dao.po.AiAgent" useGeneratedKeys="true" keyProperty="id">
+    <insert id="insert" parameterType="cn.moonice.infrastructure.dao.po.AiAgent" useGeneratedKeys="true" keyProperty="id">
         INSERT INTO ai_agent (
             agent_id, agent_name, description, channel, status, create_time, update_time
         ) VALUES (
@@ -21,7 +21,7 @@
         )
     </insert>
 
-    <update id="updateById" parameterType="cn.bugstack.ai.infrastructure.dao.po.AiAgent">
+    <update id="updateById" parameterType="cn.moonice.infrastructure.dao.po.AiAgent">
         UPDATE ai_agent SET
             agent_id = #{agentId},
             agent_name = #{agentName},
@@ -32,7 +32,7 @@
         WHERE id = #{id}
     </update>
 
-    <update id="updateByAgentId" parameterType="cn.bugstack.ai.infrastructure.dao.po.AiAgent">
+    <update id="updateByAgentId" parameterType="cn.moonice.infrastructure.dao.po.AiAgent">
         UPDATE ai_agent SET
             agent_name = #{agentName},
             description = #{description},
