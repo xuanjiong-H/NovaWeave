@@ -40,6 +40,14 @@ public abstract class AbstractArmorySupport extends AbstractMultiThreadStrategyR
         // 缺省的
     }
 
+    protected String beanName(String id) {
+        return null;
+    }
+
+    protected String dataName() {
+        return null;
+    }
+
     /**
      * 通用的Bean注册方法
      *
