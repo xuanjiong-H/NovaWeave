@@ -8,6 +8,7 @@ import com.alibaba.fastjson.JSON;
 import jakarta.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.jupiter.api.Test;
+import org.springframework.ai.chat.client.ChatClient;
 import org.springframework.ai.chat.messages.UserMessage;
 import org.springframework.ai.chat.model.ChatResponse;
 import org.springframework.ai.chat.prompt.Prompt;
@@ -71,6 +72,31 @@ public class AgentTest {
         ChatResponse chatResponse = openAiChatModel.call(prompt);
 
         log.info("测试结果(call):{}", JSON.toJSONString(chatResponse));
+    }
+
+    @Test
+    public void test_aiClient() throws Exception {
+        StrategyHandler<ArmoryCommandEntity, DefaultArmoryStrategyFactory.DynamicContext, String> armoryStrategyHandler =
+                defaultArmoryStrategyFactory.armoryStrategyHandler();
+
+        String apply = armoryStrategyHandler.apply(
+                ArmoryCommandEntity.builder()
+                        .commandType(AiAgentEnumVO.AI_CLIENT.getCode())
+                        .commandIdList(Arrays.asList("3001"))
+                        .build(),
+                new DefaultArmoryStrategyFactory.DynamicContext());
+
+        ChatClient chatClient = (ChatClient) applicationContext.getBean(AiAgentEnumVO.AI_CLIENT.getBeanName("3001"));
+        log.info("客户端构建:{}", chatClient);
+
+        String content = chatClient.prompt(Prompt.builder()
+                .messages(new UserMessage(
+                        """
+                                有哪些工具可以使用
+                                """))
+                .build()).call().content();
+
+        log.info("测试结果(call):{}", content);
     }
 
 }
