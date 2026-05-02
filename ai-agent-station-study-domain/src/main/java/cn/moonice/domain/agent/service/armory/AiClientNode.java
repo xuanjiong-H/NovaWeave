@@ -1,7 +1,7 @@
 package cn.moonice.domain.agent.service.armory;
 
 import cn.moonice.domain.agent.model.entity.ArmoryCommandEntity;
-import cn.moonice.domain.agent.model.valobj.AiAgentEnumVO;
+import cn.moonice.domain.agent.model.valobj.enums.AiAgentEnumVO;
 import cn.moonice.domain.agent.model.valobj.AiClientSystemPromptVO;
 import cn.moonice.domain.agent.model.valobj.AiClientVO;
 import cn.moonice.domain.agent.service.armory.factory.DefaultArmoryStrategyFactory;

@@ -6,15 +6,17 @@
         <id column="id" property="id"/>
         <result column="agent_id" property="agentId"/>
         <result column="client_id" property="clientId"/>
+        <result column="client_name" property="clientName"/>
+        <result column="client_type" property="clientType"/>
         <result column="sequence" property="sequence"/>
         <result column="create_time" property="createTime"/>
     </resultMap>
 
     <insert id="insert" parameterType="cn.moonice.infrastructure.dao.po.AiAgentFlowConfig" useGeneratedKeys="true" keyProperty="id">
         INSERT INTO ai_agent_flow_config (
-            agent_id, client_id, sequence, create_time
+            agent_id, client_id, client_name, client_type, sequence, create_time
         ) VALUES (
-            #{agentId}, #{clientId}, #{sequence}, #{createTime}
+            #{agentId}, #{clientId}, #{clientName}, #{clientType}, #{sequence}, #{createTime}
         )
     </insert>
 
@@ -34,34 +36,34 @@
         DELETE FROM ai_agent_flow_config WHERE agent_id = #{agentId}
     </delete>
 
-    <select id="queryById" parameterType="java.lang.Long" resultMap="AiAgentFlowConfigMap">
-        SELECT id, agent_id, client_id, sequence, create_time
+    <select id="queryById" parameterType="java.lang.String" resultMap="AiAgentFlowConfigMap">
+        SELECT id, agent_id, client_id, client_name, client_type, sequence, create_time
         FROM ai_agent_flow_config
         WHERE id = #{id}
     </select>
 
-    <select id="queryByAgentId" parameterType="java.lang.Long" resultMap="AiAgentFlowConfigMap">
-        SELECT id, agent_id, client_id, sequence, create_time
+    <select id="queryByAgentId" parameterType="java.lang.String" resultMap="AiAgentFlowConfigMap">
+        SELECT id, agent_id, client_id, client_name, client_type, sequence, create_time
         FROM ai_agent_flow_config
         WHERE agent_id = #{agentId}
         ORDER BY sequence ASC
     </select>
 
-    <select id="queryByClientId" parameterType="java.lang.Long" resultMap="AiAgentFlowConfigMap">
-        SELECT id, agent_id, client_id, sequence, create_time
+    <select id="queryByClientId" parameterType="java.lang.String" resultMap="AiAgentFlowConfigMap">
+        SELECT id, agent_id, client_id, client_name, client_type, sequence, create_time
         FROM ai_agent_flow_config
         WHERE client_id = #{clientId}
         ORDER BY sequence ASC
     </select>
 
     <select id="queryByAgentIdAndClientId" resultMap="AiAgentFlowConfigMap">
-        SELECT id, agent_id, client_id, sequence, create_time
+        SELECT id, agent_id, client_id, client_name, client_type, sequence, create_time
         FROM ai_agent_flow_config
         WHERE agent_id = #{agentId} AND client_id = #{clientId}
     </select>
 
     <select id="queryAll" resultMap="AiAgentFlowConfigMap">
-        SELECT id, agent_id, client_id, sequence, create_time
+        SELECT id, agent_id, client_id, client_name, client_type, sequence, create_time
         FROM ai_agent_flow_config
         ORDER BY agent_id ASC, sequence ASC
     </select>

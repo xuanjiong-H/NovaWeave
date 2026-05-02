@@ -1,32 +1,20 @@
-package cn.moonice.infrastructure.dao.po;
+package cn.moonice.domain.agent.model.valobj;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-import java.time.LocalDateTime;
-
 /**
- * 智能体-客户端关联表
- * @author bugstack虫洞栈
- * @description 智能体-客户端关联表 PO 对象
+ * 客户端配置
+ * @author xiaofuge bugstack.cn @小傅哥
+ * 2025/7/27 17:18
  */
 @Data
 @Builder
 @AllArgsConstructor
 @NoArgsConstructor
-public class AiAgentFlowConfig {
-
-    /**
-     * 主键ID
-     */
-    private Long id;
-
-    /**
-     * 智能体ID
-     */
-    private String agentId;
+public class AiAgentClientFlowConfigVO {
 
     /**
      * 客户端ID
@@ -47,10 +35,5 @@ public class AiAgentFlowConfig {
      * 序列号(执行顺序)
      */
     private Integer sequence;
-
-    /**
-     * 创建时间
-     */
-    private LocalDateTime createTime;
 
 }

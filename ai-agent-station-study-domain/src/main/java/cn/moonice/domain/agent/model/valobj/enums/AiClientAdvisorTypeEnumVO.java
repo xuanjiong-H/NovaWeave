@@ -1,6 +1,6 @@
-package cn.moonice.domain.agent.model.valobj;
+package cn.moonice.domain.agent.model.valobj.enums;
 
-import cn.moonice.domain.agent.service.armory.factory.element.RagAnswerAdvisor;
+import cn.moonice.domain.agent.model.valobj.AiClientAdvisorVO;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -9,6 +9,7 @@ import org.springframework.ai.chat.client.advisor.api.Advisor;
 import org.springframework.ai.chat.memory.MessageWindowChatMemory;
 import org.springframework.ai.vectorstore.SearchRequest;
 import org.springframework.ai.vectorstore.VectorStore;
+import cn.moonice.domain.agent.service.armory.factory.element.RagAnswerAdvisor;
 
 import java.util.HashMap;
 import java.util.Map;

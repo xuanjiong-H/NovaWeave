@@ -1,7 +1,7 @@
 package cn.moonice.test.domain;
 
 import cn.moonice.domain.agent.model.entity.ArmoryCommandEntity;
-import cn.moonice.domain.agent.model.valobj.AiAgentEnumVO;
+import cn.moonice.domain.agent.model.valobj.enums.AiAgentEnumVO;
 import cn.moonice.domain.agent.service.armory.factory.DefaultArmoryStrategyFactory;
 import cn.bugstack.wrench.design.framework.tree.StrategyHandler;
 import com.alibaba.fastjson.JSON;

@@ -1,4 +1,4 @@
-package cn.moonice.domain.agent.model.valobj;
+package cn.moonice.domain.agent.model.valobj.enums;
 
 import lombok.AllArgsConstructor;
 import lombok.Getter;
