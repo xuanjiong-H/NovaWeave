@@ -79,7 +79,7 @@ public class AiAgentAutoConfiguration implements ApplicationListener<Application
                             .build(),
                     new DefaultArmoryStrategyFactory.DynamicContext());
 
-            log.info("AI Agent 自动装配完成，结果: {}", result);
+            log.info("AI Agent 自动装配完成");
             
         } catch (Exception e) {
             log.error("AI Agent 自动装配失败", e);

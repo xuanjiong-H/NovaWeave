@@ -86,7 +86,7 @@ public class AiAgentMCPESTest {
                         """ 
                                 查询xfg01日志，DSL 语句；
                                 {
-                                  `index`: `group-buy-market-log-2025.06.08`,
+                                  `index`: `[从list_indices()获取的实际索引名]`,
                                   `queryBody`: {
                                     `size`: 10,
                                     `sort`: [
@@ -118,10 +118,10 @@ public class AiAgentMCPESTest {
     public McpSyncClient stdioMcpClientElasticsearch() {
 
         Map<String, String> env = new HashMap<>();
-        env.put("ES_URL","http://127.0.0.1:9200");
+        env.put("ES_URL","http://106.53.86.136:9200");
         env.put("ES_API_KEY","none");
 
-        var stdioParams = ServerParameters.builder("npx")
+        var stdioParams = ServerParameters.builder("npx.cmd")
                 .args("-y", "@elastic/mcp-server-elasticsearch")
                 .env(env)
                 .build();

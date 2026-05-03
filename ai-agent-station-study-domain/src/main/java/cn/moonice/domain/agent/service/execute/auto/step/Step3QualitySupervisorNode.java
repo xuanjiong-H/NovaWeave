@@ -31,30 +31,12 @@ public class Step3QualitySupervisorNode extends AbstractExecuteSupport {
             log.warn("⚠️ 执行结果为空，跳过质量监督");
             return "质量监督跳过";
         }
-        
-        String supervisionPrompt = String.format("""
-                **用户原始需求:** %s
-                
-                **执行结果:** %s
-                
-                **监督要求:** 
-                请严格评估执行结果是否真正满足了用户的原始需求：
-                1. 检查是否直接回答了用户的问题
-                2. 评估内容的完整性和实用性
-                3. 确认是否提供了用户期望的具体结果（如学习计划、项目列表等）
-                4. 判断是否只是描述过程而没有给出实际答案
-                
-                **输出格式:**
-                需求匹配度: [执行结果与用户原始需求的匹配程度分析]
-                内容完整性: [内容是否完整、具体、实用]
-                问题识别: [发现的问题和不足，特别是是否偏离了用户真正的需求]
-                改进建议: [具体的改进建议，确保能直接满足用户需求]
-                质量评分: [1-10分的质量评分]
-                是否通过: [PASS/FAIL/OPTIMIZE]
-                """, requestParameter.getMessage(), executionResult);
+
+        AiAgentClientFlowConfigVO aiAgentClientFlowConfigVO = dynamicContext.getAiAgentClientFlowConfigVOMap().get(AiClientTypeEnumVO.QUALITY_SUPERVISOR_CLIENT.getCode());
+
+        String supervisionPrompt = String.format(aiAgentClientFlowConfigVO.getStepPrompt(), requestParameter.getMessage(), executionResult);
 
         // 获取对话客户端
-        AiAgentClientFlowConfigVO aiAgentClientFlowConfigVO = dynamicContext.getAiAgentClientFlowConfigVOMap().get(AiClientTypeEnumVO.QUALITY_SUPERVISOR_CLIENT.getCode());
         ChatClient chatClient = getChatClientByClientId(aiAgentClientFlowConfigVO.getClientId());
 
         String supervisionResult = chatClient

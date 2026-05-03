@@ -38,17 +38,17 @@ public class AiAgentStepTest {
     public void init() {
 
         OpenAiApi openAiApi = OpenAiApi.builder()
-                .baseUrl("https://apis.itedus.cn")
-                .apiKey("sk-iL1clxGn4nsegwFS8822Ba0eB5D1461eA0845360Eb9fFfFc")
-                .completionsPath("v1/chat/completions")
-                .embeddingsPath("v1/embeddings")
+                .baseUrl("https://api.zhizengzeng.com/v1")
+                .apiKey("sk-zk261fae862117df7e636b7e77fddabaaae69df9af8c7ad7")
+                .completionsPath("/v1/chat/completions")
+                .embeddingsPath("/v1/embeddings")
                 .build();
 
         chatModel = OpenAiChatModel.builder()
                 .openAiApi(openAiApi)
                 .defaultOptions(OpenAiChatOptions.builder()
-                        .model("gpt-4.1-mini")
-                        .toolCallbacks(new SyncMcpToolCallbackProvider(stdioMcpClientElasticsearch()).getToolCallbacks())
+                        .model("gpt-4o-mini")
+                        .toolCallbacks(new SyncMcpToolCallbackProvider(stdioMcpClientElasticsearch2()).getToolCallbacks())
                         .build())
                 .build();
     }
@@ -61,11 +61,37 @@ public class AiAgentStepTest {
     public McpSyncClient stdioMcpClientElasticsearch() {
 
         Map<String, String> env = new HashMap<>();
-        env.put("ES_URL", "http://127.0.0.1:9200");
+        env.put("ES_URL", "http://106.53.86.136:9200");
         env.put("ES_API_KEY", "none");
+        env.put("OTEL_SDK_DISABLED", "true");
+        env.put("NODE_OPTIONS", "--no-warnings");
 
-        var stdioParams = ServerParameters.builder("npx")
+        var stdioParams = ServerParameters.builder("npx.cmd")
                 .args("-y", "@elastic/mcp-server-elasticsearch")
+                .env(env)
+                .build();
+
+        var mcpClient = McpClient.sync(new StdioClientTransport(stdioParams))
+                .requestTimeout(Duration.ofSeconds(100)).build();
+
+        var init = mcpClient.initialize();
+
+        System.out.println("Stdio MCP Initialized: " + init);
+
+        return mcpClient;
+
+    }
+
+    public McpSyncClient stdioMcpClientElasticsearch2() {
+        Map<String, String> env = new HashMap<>();
+        env.put("ES_HOST", "http://106.53.86.136:9200");
+        env.put("ES_API_KEY", "none");
+        // 禁用OpenTelemetry以避免日志干扰JSON-RPC通信
+//        env.put("OTEL_SDK_DISABLED", "true");
+//        env.put("NODE_OPTIONS", "--no-warnings");
+
+        var stdioParams = ServerParameters.builder("npx.cmd")
+                .args("-y", "@awesome-ai/elasticsearch-mcp")
                 .env(env)
                 .build();
 
@@ -90,7 +116,7 @@ public class AiAgentStepTest {
         String systemPrompt = buildSystemPrompt();
 
         // 第二步：用户查询提示词
-        String userQuery = "查询哪个用户被限流了";
+        String userQuery = "ES查询哪个用户被限流了";
 
         // 第三步：构建完整的提示词
         String fullPrompt = buildFullPrompt(systemPrompt, userQuery);
@@ -130,7 +156,7 @@ public class AiAgentStepTest {
                 - 按时间倒序排列结果
                 - 示例查询结构：
                  {
-                  `index`: `group-buy-market-log-2025.06.08`,
+                  `index`: `[从list_indices()获取的实际索引名]`,
                   `queryBody`: {
                     `size`: 10,
                     `sort`: [
@@ -278,5 +304,55 @@ public class AiAgentStepTest {
                 """, timeRange, logLevel, timeRange, logLevel);
 
         return executeStep(advancedPrompt);
+    }
+
+    /**
+     * 测试优化后的MCP工具调用格式
+     * 验证queryBody参数能够正确构建，避免undefined错误
+     */
+    @Test
+    public void testOptimizedMcpToolCall() {
+        String optimizedPrompt = """
+                **🚨 CRITICAL: MCP工具调用要求**
+                如果需要调用search工具进行ES查询，必须严格遵守以下格式：
+                1. **index参数**: 必须是从list_indices()获得的真实索引名（字符串类型）
+                2. **queryBody参数**: 必须是完整的JSON对象，绝对不能为undefined或null
+                
+                **queryBody标准格式（必须严格按照此格式）:**
+                ```json
+                {
+                  "size": 10,
+                  "sort": [
+                    {
+                      "@timestamp": {
+                        "order": "desc"
+                      }
+                    }
+                  ],
+                  "query": {
+                    "match": {
+                      "message": "搜索关键词"
+                    }
+                  }
+                }
+                ```
+                
+                **工具调用检查清单（每次调用前必须确认）:**
+                - [ ] index参数已设置为真实索引名
+                - [ ] queryBody是完整的JSON对象（不是undefined）
+                - [ ] queryBody包含query字段
+                - [ ] queryBody包含size字段
+                - [ ] JSON格式正确无语法错误
+                
+                **任务:** 请查询最近的错误日志，搜索关键词"error"，返回最新的10条记录。
+                
+                **执行步骤:**
+                1. 首先调用list_indices()获取可用的索引列表
+                2. 选择合适的日志索引
+                3. 使用search工具查询，确保queryBody参数完整
+                4. 返回查询结果
+                """;
+
+        executeStep(optimizedPrompt);
     }
 }

@@ -113,6 +113,7 @@ public class Step4LogExecutionSummaryNode extends AbstractExecuteSupport {
                     3. 提供具体、实用的最终答案
                     4. 如果是要求制定计划、列表等，请直接给出完整的内容
                     5. 避免只描述执行过程，重点是最终答案
+                    6. 以MD语法的表格形式，优化展示结果数据
                     
                     请直接给出用户问题的最终答案：
                     """,
@@ -132,6 +133,7 @@ public class Step4LogExecutionSummaryNode extends AbstractExecuteSupport {
                     2. 如果信息不足，说明哪些部分无法完成并给出原因
                     3. 提供已能确定的部分答案
                     4. 给出完成剩余部分的具体建议
+                    5. 以MD语法的表格形式，优化展示结果数据
                     
                     请基于现有信息给出用户问题的答案：
                     """,

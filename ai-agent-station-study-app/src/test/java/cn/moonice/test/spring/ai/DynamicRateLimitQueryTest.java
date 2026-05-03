@@ -54,17 +54,17 @@ public class DynamicRateLimitQueryTest {
                 .openAiApi(openAiApi)
                 .defaultOptions(OpenAiChatOptions.builder()
                         .model("gpt-4o-mini")
-                        .toolCallbacks(new SyncMcpToolCallbackProvider(stdioMcpClientElasticsearch()).getToolCallbacks())
+                        .toolCallbacks(new SyncMcpToolCallbackProvider(stdioMcpClientElasticsearch2()).getToolCallbacks())
                         .build())
                 .build();
     }
 
     public McpSyncClient stdioMcpClientElasticsearch() {
         Map<String, String> env = new HashMap<>();
-        env.put("ES_URL", "http://127.0.0.1:9200");
+        env.put("ES_URL", "http://106.53.86.136:9200");
         env.put("ES_API_KEY", "none");
 
-        var stdioParams = ServerParameters.builder("npx")
+        var stdioParams = ServerParameters.builder("npx.cmd")
                 .args("-y", "@elastic/mcp-server-elasticsearch")
                 .env(env)
                 .build();
@@ -75,6 +75,30 @@ public class DynamicRateLimitQueryTest {
         var init = mcpClient.initialize();
         System.out.println("Stdio MCP Initialized: " + init);
         return mcpClient;
+    }
+
+    public McpSyncClient stdioMcpClientElasticsearch2() {
+        Map<String, String> env = new HashMap<>();
+        env.put("ES_HOST", "http://106.53.86.136:9200");
+        env.put("ES_API_KEY", "none");
+        // 禁用OpenTelemetry以避免日志干扰JSON-RPC通信
+//        env.put("OTEL_SDK_DISABLED", "true");
+//        env.put("NODE_OPTIONS", "--no-warnings");
+
+        var stdioParams = ServerParameters.builder("npx.cmd")
+                .args("-y", "@awesome-ai/elasticsearch-mcp")
+                .env(env)
+                .build();
+
+        var mcpClient = McpClient.sync(new StdioClientTransport(stdioParams))
+                .requestTimeout(Duration.ofSeconds(100)).build();
+
+        var init = mcpClient.initialize();
+
+        System.out.println("Stdio MCP Initialized: " + init);
+
+        return mcpClient;
+
     }
 
     /**
