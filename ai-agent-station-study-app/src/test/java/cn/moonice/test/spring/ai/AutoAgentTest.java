@@ -59,29 +59,12 @@ public class AutoAgentTest {
                 .build();
 
         // 初始化 ChatModel
-        mcpClients = new ArrayList<>();
-        try {
-            McpSyncClient stdioClient = stdioMcpClient();
-            if (stdioClient != null) mcpClients.add(stdioClient);
-        } catch (Exception e) {
-            log.warn("Stdio MCP 客户端初始化失败: {}", e.getMessage());
-        }
-        try {
-            McpSyncClient sseClient = sseMcpClient();
-            if (sseClient != null) mcpClients.add(sseClient);
-        } catch (Exception e) {
-            log.warn("SSE MCP 客户端初始化失败: {}", e.getMessage());
-        }
-
-        OpenAiChatOptions.Builder optionsBuilder = OpenAiChatOptions.builder()
-                .model("gpt-4o-mini");
-        if (!mcpClients.isEmpty()) {
-            optionsBuilder.toolCallbacks(new SyncMcpToolCallbackProvider(mcpClients).getToolCallbacks());
-        }
-
         chatModel = OpenAiChatModel.builder()
                 .openAiApi(openAiApi)
-                .defaultOptions(optionsBuilder.build())
+                .defaultOptions(OpenAiChatOptions.builder()
+                        .model("gpt-4o-mini")
+                        .toolCallbacks(new SyncMcpToolCallbackProvider(stdioMcpClient(), sseMcpClient()).getToolCallbacks())
+                        .build())
                 .build();
 
         // 初始化 Planning Agent ChatClient - 负责任务规划
@@ -160,6 +143,7 @@ public class AutoAgentTest {
                         
                         今天是 {current_date}。
                         """)
+                .defaultToolCallbacks(new SyncMcpToolCallbackProvider(stdioMcpClient(), sseMcpClient()).getToolCallbacks())
                 .defaultAdvisors(
                         PromptChatMemoryAdvisor.builder(
                                 MessageWindowChatMemory.builder()
@@ -193,6 +177,7 @@ public class AutoAgentTest {
                         
                         今天是 {current_date}。
                         """)
+                .defaultToolCallbacks(new SyncMcpToolCallbackProvider(stdioMcpClient(), sseMcpClient()).getToolCallbacks())
                 .defaultAdvisors(
                         PromptChatMemoryAdvisor.builder(
                                 MessageWindowChatMemory.builder()
@@ -502,7 +487,7 @@ public class AutoAgentTest {
                         **质量检查:**
                         [对执行结果的质量评估]
                         """)
-                .defaultToolCallbacks(mcpClients.isEmpty() ? new SyncMcpToolCallbackProvider().getToolCallbacks() : new SyncMcpToolCallbackProvider(mcpClients).getToolCallbacks())
+                .defaultToolCallbacks(new SyncMcpToolCallbackProvider(stdioMcpClient(), sseMcpClient()).getToolCallbacks())
                 .defaultAdvisors(
                         PromptChatMemoryAdvisor.builder(
                                 MessageWindowChatMemory.builder()
@@ -941,7 +926,7 @@ public class AutoAgentTest {
         
         // 计算执行效率
         double efficiency = isCompleted ? 100.0 : (double) actualSteps / maxSteps * 100;
-        log.info("📊 执行效率: {}%", String.format("%.1f", efficiency));
+        log.info("📊 执行效率: {:.1f}%", efficiency);
     }
     
     /**

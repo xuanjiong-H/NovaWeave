@@ -20,7 +20,7 @@ import java.util.concurrent.ThreadPoolExecutor;
  * 2025/6/28 20:12
  */
 @Slf4j
-@Service
+@Service("aiClientModelLoadDataStrategy")
 public class AiClientModelLoadDataStrategy implements ILoadDataStrategy {
 
     @Resource

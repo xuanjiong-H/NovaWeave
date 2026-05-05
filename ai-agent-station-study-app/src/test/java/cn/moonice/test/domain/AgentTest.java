@@ -54,18 +54,20 @@ public class AgentTest {
         String apply = armoryStrategyHandler.apply(
                 ArmoryCommandEntity.builder()
                         .commandType(AiAgentEnumVO.AI_CLIENT.getCode())
-                        .commandIdList(Arrays.asList("3001"))
+                        .commandIdList(Arrays.asList("5001"))
                         .build(),
                 new DefaultArmoryStrategyFactory.DynamicContext());
 
-        OpenAiChatModel openAiChatModel = (OpenAiChatModel) applicationContext.getBean(AiAgentEnumVO.AI_CLIENT_MODEL.getBeanName("2001"));
+        OpenAiChatModel openAiChatModel = (OpenAiChatModel) applicationContext.getBean(AiAgentEnumVO.AI_CLIENT_MODEL.getBeanName("2004"));
 
         log.info("模型构建:{}", openAiChatModel);
 
+        // 1. 有哪些工具可以使用
+        // 2. 在 /Users/fuzhengwei/Desktop 创建 txt.md 文件
         Prompt prompt = Prompt.builder()
                 .messages(new UserMessage(
                         """
-                                在E:\\code\\mcp_test 创建txt.md文件
+                                有哪些工具可以使用
                                 """))
                 .build();
 

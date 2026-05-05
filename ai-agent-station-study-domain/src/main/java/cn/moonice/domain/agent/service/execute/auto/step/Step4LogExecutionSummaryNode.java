@@ -72,10 +72,11 @@ public class Step4LogExecutionSummaryNode extends AbstractExecuteSupport {
             boolean isCompleted = dynamicContext.isCompleted();
             log.info("\n--- 生成{}任务的最终答案 ---", isCompleted ? "已完成" : "未完成");
 
-            String summaryPrompt = getSummaryPrompt(requestParameter, dynamicContext, isCompleted);
+            AiAgentClientFlowConfigVO aiAgentClientFlowConfigVO = dynamicContext.getAiAgentClientFlowConfigVOMap().get(AiClientTypeEnumVO.RESPONSE_ASSISTANT.getCode());
+
+            String summaryPrompt = getSummaryPrompt(aiAgentClientFlowConfigVO, requestParameter, dynamicContext, isCompleted);
 
             // 获取对话客户端 - 使用任务分析客户端进行总结
-            AiAgentClientFlowConfigVO aiAgentClientFlowConfigVO = dynamicContext.getAiAgentClientFlowConfigVOMap().get(AiClientTypeEnumVO.RESPONSE_ASSISTANT.getCode());
             ChatClient chatClient = getChatClientByClientId(aiAgentClientFlowConfigVO.getClientId());
             
             String summaryResult = chatClient
@@ -96,27 +97,10 @@ public class Step4LogExecutionSummaryNode extends AbstractExecuteSupport {
         }
     }
 
-    private static String getSummaryPrompt(ExecuteCommandEntity requestParameter, DefaultAutoAgentExecuteStrategyFactory.DynamicContext dynamicContext, boolean isCompleted) {
+    private static String getSummaryPrompt(AiAgentClientFlowConfigVO aiAgentClientFlowConfigVO, ExecuteCommandEntity requestParameter, DefaultAutoAgentExecuteStrategyFactory.DynamicContext dynamicContext, boolean isCompleted) {
         String summaryPrompt;
         if (isCompleted) {
-            summaryPrompt = String.format("""
-                    基于以下执行过程，请直接回答用户的原始问题，提供最终的答案和结果：
-                    
-                    **用户原始问题:** %s
-                    
-                    **执行历史和过程:**
-                    %s
-                    
-                    **要求:**
-                    1. 直接回答用户的原始问题
-                    2. 基于执行过程中获得的信息和结果
-                    3. 提供具体、实用的最终答案
-                    4. 如果是要求制定计划、列表等，请直接给出完整的内容
-                    5. 避免只描述执行过程，重点是最终答案
-                    6. 以MD语法的表格形式，优化展示结果数据
-                    
-                    请直接给出用户问题的最终答案：
-                    """,
+            summaryPrompt = String.format(aiAgentClientFlowConfigVO.getStepPrompt(),
                     requestParameter.getMessage(),
                     dynamicContext.getExecutionHistory().toString());
         } else {

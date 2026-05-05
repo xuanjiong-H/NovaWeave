@@ -20,10 +20,7 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.junit4.SpringRunner;
 
 import java.time.Duration;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.function.Consumer;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -44,10 +41,10 @@ public class DynamicRateLimitQueryTest {
     @Before
     public void init() {
         OpenAiApi openAiApi = OpenAiApi.builder()
-                .baseUrl("https://apis.itedus.cn")
-                .apiKey("sk-iL1clxGn4nsegwFS8822Ba0eB5D1461eA0845360Eb9fFfFc")
-                .completionsPath("v1/chat/completions")
-                .embeddingsPath("v1/embeddings")
+                .baseUrl("https://api.zhizengzeng.com/v1")
+                .apiKey("sk-zk261fae862117df7e636b7e77fddabaaae69df9af8c7ad7")
+                .completionsPath("/v1/chat/completions")
+                .embeddingsPath("/v1/embeddings")
                 .build();
 
         chatModel = OpenAiChatModel.builder()

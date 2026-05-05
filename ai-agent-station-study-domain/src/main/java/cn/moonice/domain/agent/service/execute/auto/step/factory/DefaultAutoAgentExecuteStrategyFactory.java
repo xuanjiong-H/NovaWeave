@@ -28,7 +28,7 @@ public class DefaultAutoAgentExecuteStrategyFactory {
         this.executeRootNode = executeRootNode;
     }
 
-    public StrategyHandler<ExecuteCommandEntity, DynamicContext, String> armoryStrategyHandler(){
+    public StrategyHandler<ExecuteCommandEntity, DefaultAutoAgentExecuteStrategyFactory.DynamicContext, String> armoryStrategyHandler(){
         return executeRootNode;
     }
 

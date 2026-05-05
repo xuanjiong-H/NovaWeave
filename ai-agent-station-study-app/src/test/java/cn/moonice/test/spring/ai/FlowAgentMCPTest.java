@@ -7,8 +7,7 @@ import io.modelcontextprotocol.client.transport.HttpClientSseClientTransport;
 import io.modelcontextprotocol.client.transport.ServerParameters;
 import io.modelcontextprotocol.client.transport.StdioClientTransport;
 import lombok.extern.slf4j.Slf4j;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.Test;
 import org.springframework.ai.chat.messages.UserMessage;
 import org.springframework.ai.chat.model.ChatResponse;
 import org.springframework.ai.chat.prompt.Prompt;
@@ -17,7 +16,6 @@ import org.springframework.ai.openai.OpenAiChatModel;
 import org.springframework.ai.openai.OpenAiChatOptions;
 import org.springframework.ai.openai.api.OpenAiApi;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.test.context.junit4.SpringRunner;
 
 import java.time.Duration;
 import java.util.HashMap;
@@ -28,7 +26,6 @@ import java.util.Map;
  * 2025/8/9 09:15
  */
 @Slf4j
-@RunWith(SpringRunner.class)
 @SpringBootTest
 public class FlowAgentMCPTest {
 
@@ -43,7 +40,7 @@ public class FlowAgentMCPTest {
                         .build())
                 .defaultOptions(OpenAiChatOptions.builder()
                         .model("gpt-4o-mini")
-                        .toolCallbacks(new SyncMcpToolCallbackProvider(stdioMcpClientElasticsearch()).getToolCallbacks())
+                        .toolCallbacks(new SyncMcpToolCallbackProvider(sseMcpClient_Grafana()).getToolCallbacks())
                         .build())
                 .build();
 
@@ -75,6 +72,21 @@ public class FlowAgentMCPTest {
 
         return mcpClient;
 
+    }
+
+    public McpSyncClient sseMcpClient_Grafana() {
+        HttpClientSseClientTransport sseClientTransport = HttpClientSseClientTransport
+                .builder("http://106.53.86.136:8000")
+                .build();
+
+        McpSyncClient mcpSyncClient = McpClient.sync(sseClientTransport)
+                .requestTimeout(Duration.ofMinutes(3))
+                .build();
+
+        var init = mcpSyncClient.initialize();
+        log.info("SSE MCP Grafana Initialized: {}", init);
+
+        return mcpSyncClient;
     }
 
     public McpSyncClient sseMcpClient_BaiduSearch() {
