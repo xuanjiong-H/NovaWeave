@@ -19,6 +19,10 @@ public enum AiClientTypeEnumVO {
     QUALITY_SUPERVISOR_CLIENT("QUALITY_SUPERVISOR_CLIENT", "质量检查和优化"),
     RESPONSE_ASSISTANT("RESPONSE_ASSISTANT", "智能响应助手"),
 
+    TOOL_MCP_CLIENT("TOOL_MCP_CLIENT", "工具分析"),
+    PLANNING_CLIENT("PLANNING_CLIENT","任务规划"),
+    EXECUTOR_CLIENT("EXECUTOR_CLIENT", "任务执行")
+
     ;
 
     private String code;
