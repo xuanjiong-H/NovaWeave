@@ -74,4 +74,18 @@
         ORDER BY create_time DESC
     </select>
 
+    <select id="queryAllValidTaskSchedule" resultMap="AiAgentTaskScheduleMap">
+        SELECT id, agent_id, task_name, description, cron_expression, task_param, status, create_time, update_time
+        FROM ai_agent_task_schedule
+        WHERE status = 1
+        ORDER BY create_time DESC
+    </select>
+
+    <select id="queryAllInvalidTaskScheduleIds" resultType="java.lang.Long">
+        SELECT id
+        FROM ai_agent_task_schedule
+        WHERE status = 0
+        ORDER BY create_time DESC
+    </select>
+
 </mapper>

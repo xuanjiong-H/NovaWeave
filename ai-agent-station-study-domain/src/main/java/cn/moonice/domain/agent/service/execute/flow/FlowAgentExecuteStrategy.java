@@ -2,7 +2,7 @@ package cn.moonice.domain.agent.service.execute.flow;
 
 import cn.moonice.domain.agent.model.entity.AutoAgentExecuteResultEntity;
 import cn.moonice.domain.agent.model.entity.ExecuteCommandEntity;
-import cn.moonice.domain.agent.service.execute.IExecuteStrategy;
+import cn.moonice.domain.agent.service.IExecuteStrategy;
 import cn.moonice.domain.agent.service.execute.flow.step.factory.DefaultFlowAgentExecuteStrategyFactory;
 import cn.bugstack.wrench.design.framework.tree.StrategyHandler;
 import com.alibaba.fastjson.JSON;

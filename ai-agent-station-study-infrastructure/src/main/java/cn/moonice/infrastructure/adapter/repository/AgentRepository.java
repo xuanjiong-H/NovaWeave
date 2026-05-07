@@ -549,4 +549,49 @@ public class AgentRepository implements IAgentRepository {
                 .build();
     }
 
+    @Override
+    public List<AiAgentClientFlowConfigVO> queryAiAgentClientsByAgentId(String aiAgentId) {
+        List<AiAgentClientFlowConfigVO> aiAgentClientFlowConfigVOS = new ArrayList<>();
+
+        List<AiAgentFlowConfig> flowConfigs = aiAgentFlowConfigDao.queryByAgentId(aiAgentId);
+        for (AiAgentFlowConfig flowConfig : flowConfigs) {
+            AiAgentClientFlowConfigVO configVO = AiAgentClientFlowConfigVO.builder()
+                    .clientId(flowConfig.getClientId())
+                    .clientName(flowConfig.getClientName())
+                    .clientType(flowConfig.getClientType())
+                    .sequence(flowConfig.getSequence())
+                    .stepPrompt(flowConfig.getStepPrompt())
+                    .build();
+
+            aiAgentClientFlowConfigVOS.add(configVO);
+        }
+
+        return aiAgentClientFlowConfigVOS;
+    }
+
+    @Override
+    public List<AiAgentTaskScheduleVO> queryAllValidTaskSchedule() {
+        List<AiAgentTaskSchedule> aiAgentTaskSchedules = aiAgentTaskScheduleDao.queryAllValidTaskSchedule();
+
+        List<AiAgentTaskScheduleVO> result = new ArrayList<>();
+        for (AiAgentTaskSchedule taskSchedule : aiAgentTaskSchedules) {
+            AiAgentTaskScheduleVO taskScheduleVO = AiAgentTaskScheduleVO.builder()
+                    .id(taskSchedule.getId())
+                    .agentId(taskSchedule.getAgentId())
+                    .description(taskSchedule.getDescription())
+                    .cronExpression(taskSchedule.getCronExpression())
+                    .taskParam(taskSchedule.getTaskParam())
+                    .build();
+            result.add(taskScheduleVO);
+        }
+
+        return result;
+    }
+
+    @Override
+    public List<Long> queryAllInvalidTaskScheduleIds() {
+        return aiAgentTaskScheduleDao.queryAllInvalidTaskScheduleIds();
+    }
+
+
 }

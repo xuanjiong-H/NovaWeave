@@ -27,6 +27,11 @@
             <artifactId>commons-lang3</artifactId>
         </dependency>
 
+<!--        <dependency>-->
+<!--            <groupId>cn.bugstack.wrench</groupId>-->
+<!--            <artifactId>xfg-wrench-starter-task-job</artifactId>-->
+<!--        </dependency>-->
+
         <!-- 系统模块 -->
         <dependency>
             <groupId>cn.moonice</groupId>

@@ -4,7 +4,7 @@ import cn.moonice.api.IAiAgentService;
 import cn.moonice.api.dto.AutoAgentRequestDTO;
 import cn.moonice.domain.agent.model.entity.ExecuteCommandEntity;
 import cn.moonice.domain.agent.service.IAgentDispatchService;
-import cn.moonice.domain.agent.service.execute.IExecuteStrategy;
+import cn.moonice.domain.agent.service.IExecuteStrategy;
 import com.alibaba.fastjson.JSON;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.extern.slf4j.Slf4j;

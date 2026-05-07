@@ -4,7 +4,7 @@ import cn.moonice.domain.agent.adapter.repository.IAgentRepository;
 import cn.moonice.domain.agent.model.entity.ExecuteCommandEntity;
 import cn.moonice.domain.agent.model.valobj.AiAgentVO;
 import cn.moonice.domain.agent.service.IAgentDispatchService;
-import cn.moonice.domain.agent.service.execute.IExecuteStrategy;
+import cn.moonice.domain.agent.service.IExecuteStrategy;
 import cn.moonice.types.exception.BizException;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
