@@ -5,9 +5,14 @@ import lombok.EqualsAndHashCode;
 
 import java.io.Serial;
 
+/**
+ * 业务异常
+ * @author xiaofuge bugstack.cn @小傅哥
+ * 2025/9/2 07:10
+ */
 @EqualsAndHashCode(callSuper = true)
 @Data
-public class AppException extends RuntimeException {
+public class BizException extends RuntimeException{
 
     @Serial
     private static final long serialVersionUID = 5317680961212299217L;
@@ -18,21 +23,21 @@ public class AppException extends RuntimeException {
     /** 异常信息 */
     private String info;
 
-    public AppException(String code) {
+    public BizException(String code) {
         this.code = code;
     }
 
-    public AppException(String code, Throwable cause) {
+    public BizException(String code, Throwable cause) {
         this.code = code;
         super.initCause(cause);
     }
 
-    public AppException(String code, String message) {
+    public BizException(String code, String message) {
         this.code = code;
         this.info = message;
     }
 
-    public AppException(String code, String message, Throwable cause) {
+    public BizException(String code, String message, Throwable cause) {
         this.code = code;
         this.info = message;
         super.initCause(cause);
@@ -40,10 +45,10 @@ public class AppException extends RuntimeException {
 
     @Override
     public String toString() {
-        return "cn.moonice.x.api.types.exception.XApiException{" +
+        return "cn.moonice.types.exception.BizException{" +
                 "code='" + code + '\'' +
                 ", info='" + info + '\'' +
                 '}';
     }
-
+    
 }

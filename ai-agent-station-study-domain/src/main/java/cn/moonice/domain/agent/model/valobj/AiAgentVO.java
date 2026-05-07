@@ -1,27 +1,21 @@
-package cn.moonice.infrastructure.dao.po;
+package cn.moonice.domain.agent.model.valobj;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-import java.time.LocalDateTime;
-
 /**
- * AI智能体配置表
- * @author bugstack虫洞栈
- * @description AI智能体配置表 PO 对象
+ * AI智能体配置值对象
+ *
+ * @author xiaofuge bugstack.cn @小傅哥
+ * 2025/9/2 07:05
  */
 @Data
 @Builder
 @AllArgsConstructor
 @NoArgsConstructor
-public class AiAgent {
-
-    /**
-     * 主键ID
-     */
-    private Long id;
+public class AiAgentVO {
 
     /**
      * 智能体ID
@@ -52,15 +46,5 @@ public class AiAgent {
      * 状态(0:禁用,1:启用)
      */
     private Integer status;
-
-    /**
-     * 创建时间
-     */
-    private LocalDateTime createTime;
-
-    /**
-     * 更新时间
-     */
-    private LocalDateTime updateTime;
 
 }

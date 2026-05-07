@@ -56,6 +56,12 @@ public class Step4ExecuteStepsNode extends AbstractExecuteSupport {
             );
             sendSseResult(dynamicContext, result);
             
+            // 发送总结结果到【最终执行结果】区域
+            sendSummaryResult(dynamicContext, request.getSessionId());
+
+            // 发送完成标识
+            sendCompleteResult(dynamicContext, request.getSessionId());
+
             // 更新步骤
             dynamicContext.setStep(dynamicContext.getStep() + 1);
             dynamicContext.setCompleted(true);
@@ -226,5 +232,42 @@ public class Step4ExecuteStepsNode extends AbstractExecuteSupport {
                 "   输出数据: [如果有具体的输出数据，请在此列出]\n" +
                 "   ```\n\n" +
                 "请开始执行这个步骤，并严格按照要求提供详细的执行报告和结果输出。";
+    }
+
+    /**
+     * 发送总结结果到流式输出
+     */
+    private void sendSummaryResult(DefaultFlowAgentExecuteStrategyFactory.DynamicContext dynamicContext, String sessionId) {
+        // 构建执行总结内容
+        StringBuilder summaryContent = new StringBuilder();
+        summaryContent.append("## 执行步骤完成总结\n\n");
+
+        // 获取执行历史
+        StringBuilder executionHistory = dynamicContext.getExecutionHistory();
+        if (executionHistory != null && executionHistory.length() > 0) {
+            summaryContent.append("### 已完成的工作\n");
+            summaryContent.append(executionHistory.toString());
+            summaryContent.append("\n\n");
+        }
+
+        summaryContent.append("### 执行状态\n");
+        summaryContent.append("✅ 所有规划步骤已成功执行完成\n\n");
+
+        summaryContent.append("### 执行效果评估\n");
+        summaryContent.append("📊 任务执行流程顺利完成，各步骤按计划执行");
+
+        AutoAgentExecuteResultEntity result = AutoAgentExecuteResultEntity.createSummaryResult(
+                summaryContent.toString(), sessionId);
+        sendSseResult(dynamicContext, result);
+        log.info("📊 已发送总结结果到【最终执行结果】区域");
+    }
+
+    /**
+     * 发送完成标识到流式输出
+     */
+    private void sendCompleteResult(DefaultFlowAgentExecuteStrategyFactory.DynamicContext dynamicContext, String sessionId) {
+        AutoAgentExecuteResultEntity result = AutoAgentExecuteResultEntity.createCompleteResult(sessionId);
+        sendSseResult(dynamicContext, result);
+        log.info("✅ 已发送完成标识");
     }
 }
