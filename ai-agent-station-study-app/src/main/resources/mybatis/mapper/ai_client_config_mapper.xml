@@ -83,6 +83,15 @@
         WHERE target_type = #{targetType} AND target_id = #{targetId}
     </select>
 
+    <select id="queryByConditions" resultMap="AiClientConfigMap">
+        SELECT id, source_type, source_id, target_type, target_id, ext_param, status, create_time, update_time
+        FROM ai_client_config
+        WHERE source_type = #{sourceType}
+          AND source_id = #{sourceId}
+          AND target_type = #{targetType}
+          AND target_id = #{targetId}
+    </select>
+
     <select id="queryEnabledConfigs" resultMap="AiClientConfigMap">
         SELECT id, source_type, source_id, target_type, target_id, ext_param, status, create_time, update_time
         FROM ai_client_config
