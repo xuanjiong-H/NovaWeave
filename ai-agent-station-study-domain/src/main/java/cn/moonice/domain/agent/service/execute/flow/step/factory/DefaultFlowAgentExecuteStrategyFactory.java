@@ -28,7 +28,7 @@ public class DefaultFlowAgentExecuteStrategyFactory {
         this.flowRootNode = flowRootNode;
     }
 
-    public StrategyHandler<ExecuteCommandEntity, DynamicContext, String> armoryStrategyHandler(){
+    public StrategyHandler<ExecuteCommandEntity, DefaultFlowAgentExecuteStrategyFactory.DynamicContext, String> armoryStrategyHandler(){
         return flowRootNode;
     }
 

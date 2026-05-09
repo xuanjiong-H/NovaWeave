@@ -3,7 +3,7 @@ package cn.moonice.test.domain;
 import cn.moonice.domain.agent.model.entity.ArmoryCommandEntity;
 import cn.moonice.domain.agent.model.entity.ExecuteCommandEntity;
 import cn.moonice.domain.agent.model.valobj.enums.AiAgentEnumVO;
-import cn.moonice.domain.agent.service.armory.factory.DefaultArmoryStrategyFactory;
+import cn.moonice.domain.agent.service.armory.node.factory.DefaultArmoryStrategyFactory;
 import cn.moonice.domain.agent.service.execute.flow.step.factory.DefaultFlowAgentExecuteStrategyFactory;
 import cn.bugstack.wrench.design.framework.tree.StrategyHandler;
 import jakarta.annotation.Resource;

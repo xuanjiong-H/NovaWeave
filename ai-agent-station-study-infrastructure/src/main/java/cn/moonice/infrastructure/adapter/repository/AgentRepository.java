@@ -593,5 +593,46 @@ public class AgentRepository implements IAgentRepository {
         return aiAgentTaskScheduleDao.queryAllInvalidTaskScheduleIds();
     }
 
+    @Override
+    public void createTagOrder(AiRagOrderVO aiRagOrderVO) {
+        AiClientRagOrder aiRagOrder = new AiClientRagOrder();
+        aiRagOrder.setRagName(aiRagOrderVO.getRagName());
+        aiRagOrder.setKnowledgeTag(aiRagOrderVO.getKnowledgeTag());
+        aiRagOrder.setStatus(1);
+        aiClientRagOrderDao.insert(aiRagOrder);
+    }
+
+    @Override
+    public List<AiAgentVO> queryAvailableAgents() {
+        List<AiAgent> aiAgents = aiAgentDao.queryEnabledAgents();
+        List<AiAgentVO> aiAgentVOS = new ArrayList<>();
+        for (AiAgent aiAgent : aiAgents) {
+            aiAgentVOS.add(AiAgentVO.builder()
+                    .agentId(aiAgent.getAgentId())
+                    .agentName(aiAgent.getAgentName())
+                    .description(aiAgent.getDescription())
+                    .channel(aiAgent.getChannel())
+                    .strategy(aiAgent.getStrategy())
+                    .status(aiAgent.getStatus())
+                    .build());
+        }
+        return aiAgentVOS;
+    }
+
+    @Override
+    public List<AiClientApiVO> queryAiClientApiVOListByApiIds(List<String> apiIdList) {
+        List<AiClientApiVO> aiClientApiVOS = new ArrayList<>();
+        for (String apiId : apiIdList) {
+            AiClientApi aiClientApi = aiClientApiDao.queryByApiId(apiId);
+            aiClientApiVOS.add(AiClientApiVO.builder()
+                    .apiId(aiClientApi.getApiId())
+                    .baseUrl(aiClientApi.getBaseUrl())
+                    .apiKey(aiClientApi.getApiKey())
+                    .completionsPath(aiClientApi.getCompletionsPath())
+                    .embeddingsPath(aiClientApi.getEmbeddingsPath())
+                    .build());
+        }
+        return aiClientApiVOS;
+    }
 
 }

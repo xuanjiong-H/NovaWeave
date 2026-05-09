@@ -50,6 +50,11 @@ public class AiClientModelResponseDTO implements Serializable {
     private String modelType;
 
     /**
+     * 模型用途
+     */
+    private String modelUsage;
+
+    /**
      * 状态：0-禁用，1-启用
      */
     private Integer status;

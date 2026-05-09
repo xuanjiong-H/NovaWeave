@@ -46,7 +46,7 @@ public class AiAgentTaskScheduleDaoTest {
     public void test_updateById() {
         AiAgentTaskSchedule aiAgentTaskSchedule = AiAgentTaskSchedule.builder()
                 .id(1L)
-                .agentId(1L)
+                .agentId("1")
                 .taskName("更新后的测试任务")
                 .description("这是一个更新后的测试任务")
                 .cronExpression("0 0/15 * * * ?")

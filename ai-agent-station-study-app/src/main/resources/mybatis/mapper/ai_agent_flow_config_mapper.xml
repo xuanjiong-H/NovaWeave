@@ -34,7 +34,7 @@
         DELETE FROM ai_agent_flow_config WHERE id = #{id}
     </delete>
 
-    <delete id="deleteByAgentId" parameterType="java.lang.Long">
+    <delete id="deleteByAgentId" parameterType="java.lang.String">
         DELETE FROM ai_agent_flow_config WHERE agent_id = #{agentId}
     </delete>
 

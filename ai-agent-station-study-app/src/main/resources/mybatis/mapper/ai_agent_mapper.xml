@@ -28,7 +28,7 @@
             agent_name = #{agentName},
             description = #{description},
             channel = #{channel},
-            strategy = #{strategy},
+        strategy = #{strategy},
             status = #{status},
             update_time = #{updateTime}
         WHERE id = #{id}

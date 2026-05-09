@@ -1,7 +1,7 @@
-package cn.moonice.domain.agent.service.armory.factory;
+package cn.moonice.domain.agent.service.armory.node.factory;
 
 import cn.moonice.domain.agent.model.entity.ArmoryCommandEntity;
-import cn.moonice.domain.agent.service.armory.RootNode;
+import cn.moonice.domain.agent.service.armory.node.RootNode;
 import cn.bugstack.wrench.design.framework.tree.StrategyHandler;
 import lombok.AllArgsConstructor;
 import lombok.Builder;

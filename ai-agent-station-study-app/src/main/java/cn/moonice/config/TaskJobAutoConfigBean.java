@@ -6,6 +6,17 @@ package cn.moonice.config;
 //import cn.bugstack.wrench.task.job.provider.ITaskDataProvider;
 //import cn.bugstack.wrench.task.job.service.ITaskJobService;
 //import cn.bugstack.wrench.task.job.service.TaskJobService;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
+import org.springframework.boot.context.properties.EnableConfigurationProperties;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.scheduling.TaskScheduler;
+import org.springframework.scheduling.annotation.EnableScheduling;
+import org.springframework.scheduling.concurrent.ThreadPoolTaskScheduler;
+
+import java.util.List;
 
 /**
  *

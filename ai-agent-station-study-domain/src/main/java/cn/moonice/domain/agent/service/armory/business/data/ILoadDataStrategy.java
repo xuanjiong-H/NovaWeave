@@ -1,7 +1,7 @@
 package cn.moonice.domain.agent.service.armory.business.data;
 
 import cn.moonice.domain.agent.model.entity.ArmoryCommandEntity;
-import cn.moonice.domain.agent.service.armory.factory.DefaultArmoryStrategyFactory;
+import cn.moonice.domain.agent.service.armory.node.factory.DefaultArmoryStrategyFactory;
 
 /**
  * 数据加载策略

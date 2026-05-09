@@ -1,10 +1,10 @@
-package cn.moonice.domain.agent.service.armory;
+package cn.moonice.domain.agent.service.armory.node;
 
 import cn.moonice.domain.agent.model.entity.ArmoryCommandEntity;
 import cn.moonice.domain.agent.model.valobj.enums.AiAgentEnumVO;
 import cn.moonice.domain.agent.model.valobj.AiClientSystemPromptVO;
 import cn.moonice.domain.agent.model.valobj.AiClientVO;
-import cn.moonice.domain.agent.service.armory.factory.DefaultArmoryStrategyFactory;
+import cn.moonice.domain.agent.service.armory.node.factory.DefaultArmoryStrategyFactory;
 import cn.bugstack.wrench.design.framework.tree.StrategyHandler;
 import com.alibaba.fastjson.JSON;
 import io.modelcontextprotocol.client.McpSyncClient;
