@@ -214,7 +214,7 @@ public class Step2PlanningNode extends AbstractExecuteSupport {
         try {
             // 获取百度搜索工具信息
             toolsInfo.append("## 1. 百度搜索工具 (BaiduSearch)\n");
-            toolsInfo.append("- **服务端点**: http://localhost:8080/mcp/baidu-search\n");
+            toolsInfo.append("- **服务端点**: http://localhost:8099/mcp/baidu-search\n");
             toolsInfo.append("- **核心功能**: 通过百度搜索引擎检索技术资料和信息\n");
             toolsInfo.append("- **主要工具函数**: search\n");
             toolsInfo.append("- **参数要求**: query(搜索关键词)\n");

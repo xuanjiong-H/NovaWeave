@@ -52,7 +52,7 @@ public class AiSearchMCPTest {
 
     public McpSyncClient sseMcpClient() {
         HttpClientSseClientTransport sseClientTransport = HttpClientSseClientTransport.builder("http://appbuilder.baidu.com/v2/ai_search/mcp/")
-                .sseEndpoint("sse?api_key=bce-v3/ALTAK-eCtvgdAVsupHx1EKg6L24/f2e04330953ab5158557169a15356448f9f3e053")
+                .sseEndpoint("sse?api_key=Bearer+bce-v3/ALTAK-eCtvgdAVsupHx1EKg6L24/f2e04330953ab5158557169a15356448f9f3e053")
                 .build();
 
         McpSyncClient mcpSyncClient = McpClient.sync(sseClientTransport).requestTimeout(Duration.ofMinutes(360)).build();
