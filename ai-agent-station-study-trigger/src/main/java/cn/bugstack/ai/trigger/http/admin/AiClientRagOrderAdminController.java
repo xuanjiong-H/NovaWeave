@@ -138,7 +138,7 @@ public class AiClientRagOrderAdminController implements IAiClientRagOrderAdminSe
 
     @Override
     @DeleteMapping("/delete-by-id/{id}")
-    public Response<Boolean> deleteAiClientRagOrderById(@PathVariable Long id) {
+    public Response<Boolean> deleteAiClientRagOrderById(@PathVariable("id") Long id) {
         try {
             log.info("根据ID删除知识库配置：{}", id);
             
@@ -161,7 +161,7 @@ public class AiClientRagOrderAdminController implements IAiClientRagOrderAdminSe
 
     @Override
     @DeleteMapping("/delete-by-rag-id/{ragId}")
-    public Response<Boolean> deleteAiClientRagOrderByRagId(@PathVariable String ragId) {
+    public Response<Boolean> deleteAiClientRagOrderByRagId(@PathVariable("ragId") String ragId) {
         try {
             log.info("根据知识库ID删除知识库配置：{}", ragId);
             
@@ -184,7 +184,7 @@ public class AiClientRagOrderAdminController implements IAiClientRagOrderAdminSe
 
     @Override
     @GetMapping("/query-by-id/{id}")
-    public Response<AiClientRagOrderResponseDTO> queryAiClientRagOrderById(@PathVariable Long id) {
+    public Response<AiClientRagOrderResponseDTO> queryAiClientRagOrderById(@PathVariable("id") Long id) {
         try {
             log.info("根据ID查询知识库配置：{}", id);
             
@@ -216,7 +216,7 @@ public class AiClientRagOrderAdminController implements IAiClientRagOrderAdminSe
 
     @Override
     @GetMapping("/query-by-rag-id/{ragId}")
-    public Response<AiClientRagOrderResponseDTO> queryAiClientRagOrderByRagId(@PathVariable String ragId) {
+    public Response<AiClientRagOrderResponseDTO> queryAiClientRagOrderByRagId(@PathVariable("ragId") String ragId) {
         try {
             log.info("根据知识库ID查询知识库配置：{}", ragId);
             
@@ -274,7 +274,7 @@ public class AiClientRagOrderAdminController implements IAiClientRagOrderAdminSe
 
     @Override
     @GetMapping("/query-by-knowledge-tag/{knowledgeTag}")
-    public Response<List<AiClientRagOrderResponseDTO>> queryAiClientRagOrdersByKnowledgeTag(@PathVariable String knowledgeTag) {
+    public Response<List<AiClientRagOrderResponseDTO>> queryAiClientRagOrdersByKnowledgeTag(@PathVariable("knowledgeTag") String knowledgeTag) {
         try {
             log.info("根据知识标签查询知识库配置：{}", knowledgeTag);
             
@@ -300,7 +300,7 @@ public class AiClientRagOrderAdminController implements IAiClientRagOrderAdminSe
 
     @Override
     @GetMapping("/query-by-status/{status}")
-    public Response<List<AiClientRagOrderResponseDTO>> queryAiClientRagOrdersByStatus(@PathVariable Integer status) {
+    public Response<List<AiClientRagOrderResponseDTO>> queryAiClientRagOrdersByStatus(@PathVariable("status") Integer status) {
         try {
             log.info("根据状态查询知识库配置：{}", status);
             

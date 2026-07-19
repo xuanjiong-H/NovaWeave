@@ -133,7 +133,7 @@ public class AiClientApiAdminController implements IAiClientApiAdminService {
 
     @Override
     @DeleteMapping("/delete-by-id/{id}")
-    public Response<Boolean> deleteAiClientApiById(@PathVariable Long id) {
+    public Response<Boolean> deleteAiClientApiById(@PathVariable("id") Long id) {
         try {
             log.info("根据ID删除AI客户端API配置请求：{}", id);
             
@@ -156,7 +156,7 @@ public class AiClientApiAdminController implements IAiClientApiAdminService {
 
     @Override
     @DeleteMapping("/delete-by-api-id/{apiId}")
-    public Response<Boolean> deleteAiClientApiByApiId(@PathVariable String apiId) {
+    public Response<Boolean> deleteAiClientApiByApiId(@PathVariable("apiId") String apiId) {
         try {
             log.info("根据API ID删除AI客户端API配置请求：{}", apiId);
             
@@ -179,7 +179,7 @@ public class AiClientApiAdminController implements IAiClientApiAdminService {
 
     @Override
     @GetMapping("/query-by-id/{id}")
-    public Response<AiClientApiResponseDTO> queryAiClientApiById(@PathVariable Long id) {
+    public Response<AiClientApiResponseDTO> queryAiClientApiById(@PathVariable("id") Long id) {
         try {
             log.info("根据ID查询AI客户端API配置请求：{}", id);
             
@@ -213,7 +213,7 @@ public class AiClientApiAdminController implements IAiClientApiAdminService {
 
     @Override
     @GetMapping("/query-by-api-id/{apiId}")
-    public Response<AiClientApiResponseDTO> queryAiClientApiByApiId(@PathVariable String apiId) {
+    public Response<AiClientApiResponseDTO> queryAiClientApiByApiId(@PathVariable("apiId") String apiId) {
         try {
             log.info("根据API ID查询AI客户端API配置请求：{}", apiId);
             

@@ -133,7 +133,7 @@ public class AiClientToolMcpAdminController implements IAiClientToolMcpAdminServ
 
     @Override
     @DeleteMapping("/delete-by-id/{id}")
-    public Response<Boolean> deleteAiClientToolMcpById(@PathVariable Long id) {
+    public Response<Boolean> deleteAiClientToolMcpById(@PathVariable("id") Long id) {
         try {
             log.info("根据ID删除MCP客户端配置：{}", id);
             
@@ -156,7 +156,7 @@ public class AiClientToolMcpAdminController implements IAiClientToolMcpAdminServ
 
     @Override
     @DeleteMapping("/delete-by-mcp-id/{mcpId}")
-    public Response<Boolean> deleteAiClientToolMcpByMcpId(@PathVariable String mcpId) {
+    public Response<Boolean> deleteAiClientToolMcpByMcpId(@PathVariable("mcpId") String mcpId) {
         try {
             log.info("根据MCP ID删除MCP客户端配置：{}", mcpId);
             
@@ -179,7 +179,7 @@ public class AiClientToolMcpAdminController implements IAiClientToolMcpAdminServ
 
     @Override
     @GetMapping("/query-by-id/{id}")
-    public Response<AiClientToolMcpResponseDTO> queryAiClientToolMcpById(@PathVariable Long id) {
+    public Response<AiClientToolMcpResponseDTO> queryAiClientToolMcpById(@PathVariable("id") Long id) {
         try {
             log.info("根据ID查询MCP客户端配置：{}", id);
             
@@ -212,7 +212,7 @@ public class AiClientToolMcpAdminController implements IAiClientToolMcpAdminServ
 
     @Override
     @GetMapping("/query-by-mcp-id/{mcpId}")
-    public Response<AiClientToolMcpResponseDTO> queryAiClientToolMcpByMcpId(@PathVariable String mcpId) {
+    public Response<AiClientToolMcpResponseDTO> queryAiClientToolMcpByMcpId(@PathVariable("mcpId") String mcpId) {
         try {
             log.info("根据MCP ID查询MCP客户端配置：{}", mcpId);
             
@@ -272,7 +272,7 @@ public class AiClientToolMcpAdminController implements IAiClientToolMcpAdminServ
 
     @Override
     @GetMapping("/query-by-status/{status}")
-    public Response<List<AiClientToolMcpResponseDTO>> queryAiClientToolMcpsByStatus(@PathVariable Integer status) {
+    public Response<List<AiClientToolMcpResponseDTO>> queryAiClientToolMcpsByStatus(@PathVariable("status") Integer status) {
         try {
             log.info("根据状态查询MCP客户端配置：{}", status);
             
@@ -299,7 +299,7 @@ public class AiClientToolMcpAdminController implements IAiClientToolMcpAdminServ
 
     @Override
     @GetMapping("/query-by-transport-type/{transportType}")
-    public Response<List<AiClientToolMcpResponseDTO>> queryAiClientToolMcpsByTransportType(@PathVariable String transportType) {
+    public Response<List<AiClientToolMcpResponseDTO>> queryAiClientToolMcpsByTransportType(@PathVariable("transportType") String transportType) {
         try {
             log.info("根据传输类型查询MCP客户端配置：{}", transportType);
             

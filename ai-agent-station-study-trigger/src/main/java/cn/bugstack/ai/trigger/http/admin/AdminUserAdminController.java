@@ -135,7 +135,7 @@ public class AdminUserAdminController implements IAdminUserAdminService {
 
     @Override
     @DeleteMapping("/delete-by-id/{id}")
-    public Response<Boolean> deleteAdminUserById(@PathVariable Long id) {
+    public Response<Boolean> deleteAdminUserById(@PathVariable("id") Long id) {
         try {
             log.info("根据ID删除管理员用户请求：{}", id);
             
@@ -158,7 +158,7 @@ public class AdminUserAdminController implements IAdminUserAdminService {
 
     @Override
     @DeleteMapping("/delete-by-user-id/{userId}")
-    public Response<Boolean> deleteAdminUserByUserId(@PathVariable String userId) {
+    public Response<Boolean> deleteAdminUserByUserId(@PathVariable("userId") String userId) {
         try {
             log.info("根据用户ID删除管理员用户请求：{}", userId);
             
@@ -181,7 +181,7 @@ public class AdminUserAdminController implements IAdminUserAdminService {
 
     @Override
     @GetMapping("/query-by-id/{id}")
-    public Response<AdminUserResponseDTO> queryAdminUserById(@PathVariable Long id) {
+    public Response<AdminUserResponseDTO> queryAdminUserById(@PathVariable("id") Long id) {
         try {
             log.info("根据ID查询管理员用户请求：{}", id);
             
@@ -213,7 +213,7 @@ public class AdminUserAdminController implements IAdminUserAdminService {
 
     @Override
     @GetMapping("/query-by-user-id/{userId}")
-    public Response<AdminUserResponseDTO> queryAdminUserByUserId(@PathVariable String userId) {
+    public Response<AdminUserResponseDTO> queryAdminUserByUserId(@PathVariable("userId") String userId) {
         try {
             log.info("根据用户ID查询管理员用户请求：{}", userId);
             
@@ -245,7 +245,7 @@ public class AdminUserAdminController implements IAdminUserAdminService {
 
     @Override
     @GetMapping("/query-by-username/{username}")
-    public Response<AdminUserResponseDTO> queryAdminUserByUsername(@PathVariable String username) {
+    public Response<AdminUserResponseDTO> queryAdminUserByUsername(@PathVariable("username") String username) {
         try {
             log.info("根据用户名查询管理员用户请求：{}", username);
             
@@ -303,7 +303,7 @@ public class AdminUserAdminController implements IAdminUserAdminService {
 
     @Override
     @GetMapping("/query-by-status/{status}")
-    public Response<List<AdminUserResponseDTO>> queryAdminUsersByStatus(@PathVariable Integer status) {
+    public Response<List<AdminUserResponseDTO>> queryAdminUsersByStatus(@PathVariable("status") Integer status) {
         try {
             log.info("根据状态查询管理员用户列表请求：{}", status);
             

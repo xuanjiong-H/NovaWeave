@@ -133,7 +133,7 @@ public class AiClientAdminController implements IAiClientAdminService {
 
     @Override
     @DeleteMapping("/delete-by-id/{id}")
-    public Response<Boolean> deleteAiClientById(@PathVariable Long id) {
+    public Response<Boolean> deleteAiClientById(@PathVariable("id") Long id) {
         try {
             log.info("根据ID删除AI客户端配置请求：{}", id);
             
@@ -156,7 +156,7 @@ public class AiClientAdminController implements IAiClientAdminService {
 
     @Override
     @DeleteMapping("/delete-by-client-id/{clientId}")
-    public Response<Boolean> deleteAiClientByClientId(@PathVariable String clientId) {
+    public Response<Boolean> deleteAiClientByClientId(@PathVariable("clientId") String clientId) {
         try {
             log.info("根据客户端ID删除AI客户端配置请求：{}", clientId);
             
@@ -179,7 +179,7 @@ public class AiClientAdminController implements IAiClientAdminService {
 
     @Override
     @GetMapping("/query-by-id/{id}")
-    public Response<AiClientResponseDTO> queryAiClientById(@PathVariable Long id) {
+    public Response<AiClientResponseDTO> queryAiClientById(@PathVariable("id") Long id) {
         try {
             log.info("根据ID查询AI客户端配置请求：{}", id);
             
@@ -213,7 +213,7 @@ public class AiClientAdminController implements IAiClientAdminService {
 
     @Override
     @GetMapping("/query-by-client-id/{clientId}")
-    public Response<AiClientResponseDTO> queryAiClientByClientId(@PathVariable String clientId) {
+    public Response<AiClientResponseDTO> queryAiClientByClientId(@PathVariable("clientId") String clientId) {
         try {
             log.info("根据客户端ID查询AI客户端配置请求：{}", clientId);
             

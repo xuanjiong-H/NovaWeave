@@ -133,7 +133,7 @@ public class AiClientSystemPromptAdminController implements IAiClientSystemPromp
 
     @Override
     @DeleteMapping("/delete-by-id/{id}")
-    public Response<Boolean> deleteAiClientSystemPromptById(@PathVariable Long id) {
+    public Response<Boolean> deleteAiClientSystemPromptById(@PathVariable("id") Long id) {
         try {
             log.info("根据ID删除系统提示词配置：{}", id);
             
@@ -156,7 +156,7 @@ public class AiClientSystemPromptAdminController implements IAiClientSystemPromp
 
     @Override
     @DeleteMapping("/delete-by-prompt-id/{promptId}")
-    public Response<Boolean> deleteAiClientSystemPromptByPromptId(@PathVariable String promptId) {
+    public Response<Boolean> deleteAiClientSystemPromptByPromptId(@PathVariable("promptId") String promptId) {
         try {
             log.info("根据提示词ID删除系统提示词配置：{}", promptId);
             
@@ -179,7 +179,7 @@ public class AiClientSystemPromptAdminController implements IAiClientSystemPromp
 
     @Override
     @GetMapping("/query-by-id/{id}")
-    public Response<AiClientSystemPromptResponseDTO> queryAiClientSystemPromptById(@PathVariable Long id) {
+    public Response<AiClientSystemPromptResponseDTO> queryAiClientSystemPromptById(@PathVariable("id") Long id) {
         try {
             log.info("根据ID查询系统提示词配置：{}", id);
             
@@ -212,7 +212,7 @@ public class AiClientSystemPromptAdminController implements IAiClientSystemPromp
 
     @Override
     @GetMapping("/query-by-prompt-id/{promptId}")
-    public Response<AiClientSystemPromptResponseDTO> queryAiClientSystemPromptByPromptId(@PathVariable String promptId) {
+    public Response<AiClientSystemPromptResponseDTO> queryAiClientSystemPromptByPromptId(@PathVariable("promptId") String promptId) {
         try {
             log.info("根据提示词ID查询系统提示词配置：{}", promptId);
             
@@ -299,7 +299,7 @@ public class AiClientSystemPromptAdminController implements IAiClientSystemPromp
 
     @Override
     @GetMapping("/query-by-prompt-name/{promptName}")
-    public Response<List<AiClientSystemPromptResponseDTO>> queryAiClientSystemPromptsByPromptName(@PathVariable String promptName) {
+    public Response<List<AiClientSystemPromptResponseDTO>> queryAiClientSystemPromptsByPromptName(@PathVariable("promptName") String promptName) {
         try {
             log.info("根据提示词名称查询系统提示词配置：{}", promptName);
             

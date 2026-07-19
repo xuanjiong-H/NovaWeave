@@ -133,7 +133,7 @@ public class AiClientAdvisorAdminController implements IAiClientAdvisorAdminServ
 
     @Override
     @DeleteMapping("/delete-by-id/{id}")
-    public Response<Boolean> deleteAiClientAdvisorById(@PathVariable Long id) {
+    public Response<Boolean> deleteAiClientAdvisorById(@PathVariable("id") Long id) {
         try {
             log.info("根据ID删除顾问配置请求：{}", id);
             
@@ -156,7 +156,7 @@ public class AiClientAdvisorAdminController implements IAiClientAdvisorAdminServ
 
     @Override
     @DeleteMapping("/delete-by-advisor-id/{advisorId}")
-    public Response<Boolean> deleteAiClientAdvisorByAdvisorId(@PathVariable String advisorId) {
+    public Response<Boolean> deleteAiClientAdvisorByAdvisorId(@PathVariable("advisorId") String advisorId) {
         try {
             log.info("根据顾问ID删除顾问配置请求：{}", advisorId);
             
@@ -179,7 +179,7 @@ public class AiClientAdvisorAdminController implements IAiClientAdvisorAdminServ
 
     @Override
     @GetMapping("/query-by-id/{id}")
-    public Response<AiClientAdvisorResponseDTO> queryAiClientAdvisorById(@PathVariable Long id) {
+    public Response<AiClientAdvisorResponseDTO> queryAiClientAdvisorById(@PathVariable("id") Long id) {
         try {
             log.info("根据ID查询顾问配置请求：{}", id);
             
@@ -212,7 +212,7 @@ public class AiClientAdvisorAdminController implements IAiClientAdvisorAdminServ
 
     @Override
     @GetMapping("/query-by-advisor-id/{advisorId}")
-    public Response<AiClientAdvisorResponseDTO> queryAiClientAdvisorByAdvisorId(@PathVariable String advisorId) {
+    public Response<AiClientAdvisorResponseDTO> queryAiClientAdvisorByAdvisorId(@PathVariable("advisorId") String advisorId) {
         try {
             log.info("根据顾问ID查询顾问配置请求：{}", advisorId);
             
@@ -272,7 +272,7 @@ public class AiClientAdvisorAdminController implements IAiClientAdvisorAdminServ
 
     @Override
     @GetMapping("/query-by-status/{status}")
-    public Response<List<AiClientAdvisorResponseDTO>> queryAiClientAdvisorsByStatus(@PathVariable Integer status) {
+    public Response<List<AiClientAdvisorResponseDTO>> queryAiClientAdvisorsByStatus(@PathVariable("status") Integer status) {
         try {
             log.info("根据状态查询顾问配置请求：{}", status);
             
@@ -299,7 +299,7 @@ public class AiClientAdvisorAdminController implements IAiClientAdvisorAdminServ
 
     @Override
     @GetMapping("/query-by-type/{advisorType}")
-    public Response<List<AiClientAdvisorResponseDTO>> queryAiClientAdvisorsByType(@PathVariable String advisorType) {
+    public Response<List<AiClientAdvisorResponseDTO>> queryAiClientAdvisorsByType(@PathVariable("advisorType") String advisorType) {
         try {
             log.info("根据顾问类型查询顾问配置请求：{}", advisorType);
             

@@ -133,7 +133,7 @@ public class AiClientModelAdminController implements IAiClientModelAdminService 
 
     @Override
     @DeleteMapping("/delete-by-id/{id}")
-    public Response<Boolean> deleteAiClientModelById(@PathVariable Long id) {
+    public Response<Boolean> deleteAiClientModelById(@PathVariable("id") Long id) {
         try {
             log.info("根据ID删除AI客户端模型配置请求：{}", id);
             
@@ -156,7 +156,7 @@ public class AiClientModelAdminController implements IAiClientModelAdminService 
 
     @Override
     @DeleteMapping("/delete-by-model-id/{modelId}")
-    public Response<Boolean> deleteAiClientModelByModelId(@PathVariable String modelId) {
+    public Response<Boolean> deleteAiClientModelByModelId(@PathVariable("modelId") String modelId) {
         try {
             log.info("根据模型ID删除AI客户端模型配置请求：{}", modelId);
             
@@ -179,7 +179,7 @@ public class AiClientModelAdminController implements IAiClientModelAdminService 
 
     @Override
     @GetMapping("/query-by-id/{id}")
-    public Response<AiClientModelResponseDTO> queryAiClientModelById(@PathVariable Long id) {
+    public Response<AiClientModelResponseDTO> queryAiClientModelById(@PathVariable("id") Long id) {
         try {
             log.info("根据ID查询AI客户端模型配置请求：{}", id);
             
@@ -213,7 +213,7 @@ public class AiClientModelAdminController implements IAiClientModelAdminService 
 
     @Override
     @GetMapping("/query-by-model-id/{modelId}")
-    public Response<AiClientModelResponseDTO> queryAiClientModelByModelId(@PathVariable String modelId) {
+    public Response<AiClientModelResponseDTO> queryAiClientModelByModelId(@PathVariable("modelId") String modelId) {
         try {
             log.info("根据模型ID查询AI客户端模型配置请求：{}", modelId);
             
@@ -247,7 +247,7 @@ public class AiClientModelAdminController implements IAiClientModelAdminService 
 
     @Override
     @GetMapping("/query-by-api-id/{apiId}")
-    public Response<List<AiClientModelResponseDTO>> queryAiClientModelsByApiId(@PathVariable String apiId) {
+    public Response<List<AiClientModelResponseDTO>> queryAiClientModelsByApiId(@PathVariable("apiId") String apiId) {
         try {
             log.info("根据API配置ID查询AI客户端模型配置列表请求：{}", apiId);
             
@@ -275,7 +275,7 @@ public class AiClientModelAdminController implements IAiClientModelAdminService 
 
     @Override
     @GetMapping("/query-by-model-type/{modelType}")
-    public Response<List<AiClientModelResponseDTO>> queryAiClientModelsByModelType(@PathVariable String modelType) {
+    public Response<List<AiClientModelResponseDTO>> queryAiClientModelsByModelType(@PathVariable("modelType") String modelType) {
         try {
             log.info("根据模型类型查询AI客户端模型配置列表请求：{}", modelType);
             
