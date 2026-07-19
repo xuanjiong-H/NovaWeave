@@ -3,13 +3,21 @@ package cn.bugstack.ai.domain.agent.service.execute.flow.step;
 import cn.bugstack.ai.domain.agent.model.entity.AutoAgentExecuteResultEntity;
 import cn.bugstack.ai.domain.agent.model.entity.ExecuteCommandEntity;
 import cn.bugstack.ai.domain.agent.model.valobj.AiAgentClientFlowConfigVO;
+import cn.bugstack.ai.domain.agent.model.valobj.AiClientVO;
 import cn.bugstack.ai.domain.agent.model.valobj.enums.AiClientTypeEnumVO;
 import cn.bugstack.ai.domain.agent.service.execute.flow.step.factory.DefaultFlowAgentExecuteStrategyFactory;
 import cn.bugstack.wrench.design.framework.tree.StrategyHandler;
+import io.modelcontextprotocol.client.McpSyncClient;
 import jakarta.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.ai.chat.client.ChatClient;
+import org.springframework.ai.mcp.SyncMcpToolCallbackProvider;
+import org.springframework.ai.tool.ToolCallback;
+import org.springframework.ai.tool.definition.ToolDefinition;
 import org.springframework.stereotype.Service;
+
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * 步骤2：执行步骤规划节点
@@ -36,8 +44,16 @@ public class Step2PlanningNode extends AbstractExecuteSupport {
 
         String userRequest = dynamicContext.getCurrentTask();
         String mcpToolsAnalysis = dynamicContext.getValue("mcpToolsAnalysis");
-        
-        String planningPrompt = buildStructuredPlanningPrompt(userRequest, mcpToolsAnalysis);
+
+        // 规划必须以执行器实际拥有的工具为准，不能使用规划客户端或硬编码工具别名
+        AiAgentClientFlowConfigVO executorClientConfig = dynamicContext.getAiAgentClientFlowConfigVOMap()
+                .get(AiClientTypeEnumVO.EXECUTOR_CLIENT.getCode());
+        String actualMcpToolsInfo = executorClientConfig == null
+                ? "未找到执行器 Client 配置，无法获取 MCP 工具清单。\n"
+                : getActualMcpToolsInfo(executorClientConfig.getClientId());
+        log.info("执行器实际注册的 MCP 工具清单:\n{}", actualMcpToolsInfo);
+
+        String planningPrompt = buildStructuredPlanningPrompt(userRequest, mcpToolsAnalysis, actualMcpToolsInfo);
         
         String refinedPrompt = planningPrompt + "\n\n## ⚠️ 工具映射验证反馈\n" +
                 "\n\n**请根据上述验证反馈重新生成规划，确保：**\n" +
@@ -73,7 +89,7 @@ public class Step2PlanningNode extends AbstractExecuteSupport {
     /**
      * 构建结构化的规划提示词
      */
-    private String buildStructuredPlanningPrompt(String userRequest, String mcpToolsAnalysis) {
+    private String buildStructuredPlanningPrompt(String userRequest, String mcpToolsAnalysis, String actualMcpToolsInfo) {
         StringBuilder prompt = new StringBuilder();
 
         // 1. 任务分析部分 - 通用化用户需求分析
@@ -98,10 +114,15 @@ public class Step2PlanningNode extends AbstractExecuteSupport {
         prompt.append("## ✅ 工具映射验证要求\n");
         prompt.append("**重要提醒：** 在生成执行步骤时，必须严格遵循以下工具映射规则：\n\n");
 
-        // 动态获取实际的MCP工具信息
-        String actualToolsInfo = getActualMcpToolsInfo();
-        prompt.append("### 可用工具清单\n");
-        prompt.append(actualToolsInfo).append("\n");
+        prompt.append("### 执行器实际注册的工具清单\n\n");
+        prompt.append(actualMcpToolsInfo).append("\n");
+        prompt.append("""
+        重要规则：
+        - 工具名称必须原样复制，区分大小写。
+        - 禁止生成工具别名。
+        - 禁止使用清单中不存在的工具。
+        - 工具参数必须符合对应的输入参数 Schema。
+        """);
 
         prompt.append("### 工具选择原则\n");
         prompt.append("- **精确匹配**: 每个步骤必须使用上述工具清单中的确切函数名称\n");
@@ -207,42 +228,52 @@ public class Step2PlanningNode extends AbstractExecuteSupport {
     /**
      * 获取实际的MCP工具信息
      */
-    private String getActualMcpToolsInfo() {
-        StringBuilder toolsInfo = new StringBuilder();
-        toolsInfo.append("# 当前注册的MCP工具列表\n\n");
-
+    private String getActualMcpToolsInfo(String executorClientId) {
         try {
-            // 获取百度搜索工具信息
-            toolsInfo.append("## 1. 百度搜索工具 (BaiduSearch)\n");
-            toolsInfo.append("- **服务端点**: http://localhost:8080/mcp/baidu-search\n");
-            toolsInfo.append("- **核心功能**: 通过百度搜索引擎检索技术资料和信息\n");
-            toolsInfo.append("- **主要工具函数**: search\n");
-            toolsInfo.append("- **参数要求**: query(搜索关键词)\n");
-            toolsInfo.append("- **适用场景**: 技术资料搜索、信息收集、知识获取\n\n");
+            List<AiClientVO> clientList = repository.AiClientVOByClientIds(List.of(executorClientId));
+            if (clientList == null || clientList.isEmpty()) {
+                return "未找到执行器 Client 配置，clientId=" + executorClientId + "。\n";
+            }
 
-            // 获取CSDN工具信息
-            toolsInfo.append("## 2. CSDN发布工具 (CsdnPublish)\n");
-            toolsInfo.append("- **服务端点**: http://localhost:8080/mcp/csdn\n");
-            toolsInfo.append("- **核心功能**: 发布技术文章到CSDN平台\n");
-            toolsInfo.append("- **主要工具函数**: publish_article\n");
-            toolsInfo.append("- **参数要求**: title(文章标题), content(文章内容), tags(标签)\n");
-            toolsInfo.append("- **适用场景**: 技术文章发布、知识分享、内容创作\n\n");
+            AiClientVO executorClient = clientList.get(0);
+            List<String> mcpBeanNameList = executorClient.getMcpBeanNameList();
+            if (mcpBeanNameList == null || mcpBeanNameList.isEmpty()) {
+                return "执行器未直接绑定 MCP 工具，clientId=" + executorClientId + "。\n";
+            }
 
-            // 获取微信工具信息
-            toolsInfo.append("## 3. 微信通知工具 (WeixinNotify)\n");
-            toolsInfo.append("- **服务端点**: http://localhost:8080/mcp/weixin\n");
-            toolsInfo.append("- **核心功能**: 发送微信通知消息\n");
-            toolsInfo.append("- **主要工具函数**: send_message\n");
-            toolsInfo.append("- **参数要求**: message(消息内容), recipient(接收者)\n");
-            toolsInfo.append("- **适用场景**: 状态通知、结果反馈、任务提醒\n\n");
+            List<McpSyncClient> mcpClients = new ArrayList<>();
+            for (String mcpBeanName : mcpBeanNameList) {
+                mcpClients.add(getBean(mcpBeanName));
+            }
 
+            ToolCallback[] toolCallbacks = new SyncMcpToolCallbackProvider(
+                    mcpClients.toArray(new McpSyncClient[0])
+            ).getToolCallbacks();
+            if (toolCallbacks.length == 0) {
+                return "执行器绑定的 MCP 服务没有返回可用工具，clientId=" + executorClientId + "。\n";
+            }
+
+            StringBuilder toolsInfo = new StringBuilder();
+            for (ToolCallback toolCallback : toolCallbacks) {
+                ToolDefinition definition = toolCallback.getToolDefinition();
+                String description = definition.description();
+                String inputSchema = definition.inputSchema();
+
+                toolsInfo.append("#### `").append(definition.name()).append("`\n");
+                toolsInfo.append("- 描述：")
+                        .append(description == null || description.isBlank() ? "未提供" : description)
+                        .append("\n");
+                toolsInfo.append("- 输入参数 Schema：\n```json\n")
+                        .append(inputSchema == null || inputSchema.isBlank() ? "{}" : inputSchema)
+                        .append("\n```\n\n");
+            }
+
+            return toolsInfo.toString();
         } catch (Exception e) {
-            log.warn("获取MCP工具信息时发生错误: {}", e.getMessage());
-            toolsInfo.append("## 工具信息获取失败\n");
-            toolsInfo.append("请检查MCP服务连接状态\n\n");
+            log.error("获取执行器实际 MCP 工具信息失败，clientId={}", executorClientId, e);
+            return "获取执行器 MCP 工具清单失败，clientId=" + executorClientId
+                    + "，原因：" + e.getMessage() + "。\n";
         }
-
-        return toolsInfo.toString();
     }
 
     @Override
