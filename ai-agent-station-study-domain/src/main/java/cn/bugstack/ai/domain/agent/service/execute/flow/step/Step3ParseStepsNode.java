@@ -38,7 +38,14 @@ public class Step3ParseStepsNode extends AbstractExecuteSupport {
         }
         
         Map<String, String> stepsMap = parseExecutionSteps(planningResult);
-        
+
+        if (stepsMap.isEmpty()) {
+            log.error("规划结果未解析出步骤，planningResult={}", planningResult);
+            throw new IllegalStateException(
+                    "规划结果格式不符合要求，必须包含“### 第N步：步骤描述”"
+            );
+        }
+
         log.info("成功解析 {} 个执行步骤", stepsMap.size());
         
         // 保存解析结果到上下文

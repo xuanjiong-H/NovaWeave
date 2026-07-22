@@ -45,7 +45,14 @@ public class Step4ExecuteStepsNode extends AbstractExecuteSupport {
             
             // 按顺序执行规划步骤
             executeStepsInOrder(executorChatClient, stepsMap, dynamicContext);
-            
+
+            Map<String, Integer> stepErrorStats = dynamicContext.getValue("stepErrorStats");
+            if (stepErrorStats != null && !stepErrorStats.isEmpty()) {
+                throw new IllegalStateException(
+                        "存在执行失败步骤：" + stepErrorStats.keySet()
+                );
+            }
+
             // 发送SSE结果
             AutoAgentExecuteResultEntity result = AutoAgentExecuteResultEntity.createExecutionResult(
                     dynamicContext.getStep(),
@@ -145,7 +152,11 @@ public class Step4ExecuteStepsNode extends AbstractExecuteSupport {
                     .call()
                     .content();
 
-            assert executionResult != null;
+            if (executionResult == null || executionResult.isBlank()) {
+                throw new IllegalStateException(
+                        "第" + stepNumber + "步执行模型未返回文本"
+                );
+            }
             log.info("步骤 {} 执行结果: {}", stepNumber, executionResult.substring(0, Math.min(150, executionResult.length())) + "...");
 
             // 保存执行结果
