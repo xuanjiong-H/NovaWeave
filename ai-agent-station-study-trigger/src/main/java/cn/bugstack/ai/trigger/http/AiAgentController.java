@@ -3,6 +3,7 @@ package cn.bugstack.ai.trigger.http;
 import cn.bugstack.ai.api.IAiAgentService;
 import cn.bugstack.ai.api.dto.AiAgentResponseDTO;
 import cn.bugstack.ai.api.dto.ArmoryAgentRequestDTO;
+import cn.bugstack.ai.api.dto.ArmoryApiRequestDTO;
 import cn.bugstack.ai.api.dto.AutoAgentRequestDTO;
 import cn.bugstack.ai.api.response.Response;
 import cn.bugstack.ai.domain.agent.model.entity.ExecuteCommandEntity;
@@ -153,6 +154,43 @@ public class AiAgentController implements IAiAgentService {
                     .code(ResponseCode.UN_ERROR.getCode())
                     .info("查询失败：" + e.getMessage())
                     .data(new ArrayList<>())
+                    .build();
+        }
+    }
+
+    @RequestMapping(value = "armory_api", method = RequestMethod.POST)
+    @Override
+    public Response<Boolean> armoryApi(@RequestBody ArmoryApiRequestDTO request) {
+        log.info("装配API请求开始，请求信息：{}", JSON.toJSONString(request));
+
+        try {
+            // 参数校验
+            if (request == null || request.getApiId() == null || request.getApiId().trim().isEmpty()) {
+                log.warn("装配API请求参数无效：apiId为空");
+                return Response.<Boolean>builder()
+                        .code(ResponseCode.ILLEGAL_PARAMETER.getCode())
+                        .info("apiId不能为空")
+                        .data(false)
+                        .build();
+            }
+
+            // 调用装配服务
+            armoryService.acceptArmoryAgentClientModelApi(request.getApiId());
+
+            log.info("装配API成功，apiId：{}", request.getApiId());
+            return Response.<Boolean>builder()
+                    .code(ResponseCode.SUCCESS.getCode())
+                    .info("装配成功")
+                    .data(true)
+                    .build();
+
+        } catch (Exception e) {
+            log.error("装配API失败，apiId：{}，错误信息：{}",
+                    request != null ? request.getApiId() : "null", e.getMessage(), e);
+            return Response.<Boolean>builder()
+                    .code(ResponseCode.UN_ERROR.getCode())
+                    .info("装配失败：" + e.getMessage())
+                    .data(false)
                     .build();
         }
     }
