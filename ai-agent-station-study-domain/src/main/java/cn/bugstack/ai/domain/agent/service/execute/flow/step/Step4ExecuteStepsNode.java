@@ -76,7 +76,7 @@ public class Step4ExecuteStepsNode extends AbstractExecuteSupport {
             return "所有规划步骤执行完成";
         } catch (Exception e) {
             log.error("第四步执行失败", e);
-            return "执行步骤失败: " + e.getMessage();
+            throw new IllegalStateException("执行步骤失败: " + e.getMessage(), e);
         }
     }
 
@@ -146,9 +146,15 @@ public class Step4ExecuteStepsNode extends AbstractExecuteSupport {
             dynamicContext.setValue("currentStepKey", stepKey);
             dynamicContext.setValue("currentStepContent", stepContent);
 
+            String executionPrompt = buildStepExecutionPrompt(
+                    stepNumber,
+                    stepContent,
+                    dynamicContext
+            );
+
             // 使用执行器ChatClient来执行具体步骤
             String executionResult = executorChatClient.prompt()
-                    .user(buildStepExecutionPrompt(stepContent, dynamicContext))
+                    .user(executionPrompt)
                     .call()
                     .content();
 
@@ -163,10 +169,14 @@ public class Step4ExecuteStepsNode extends AbstractExecuteSupport {
             dynamicContext.setValue("step" + stepNumber + "Result", executionResult);
             
             // 发送步骤执行结果的SSE
+            String requestSessionId = dynamicContext.getValue("sessionId");
+            if (requestSessionId == null || requestSessionId.isBlank()) {
+                throw new IllegalStateException("当前执行上下文缺少 sessionId");
+            }
             AutoAgentExecuteResultEntity stepResult = AutoAgentExecuteResultEntity.createExecutionResult(
                     stepNumber,
-                    stepKey + " 执行完成: " + executionResult.substring(0, Math.min(500, executionResult.length())),
-                    (String) dynamicContext.getValue("sessionId")
+                    "## " + stepKey + " 执行结果\n\n" + executionResult,
+                    requestSessionId
             );
             sendSseResult(dynamicContext, stepResult);
 
@@ -174,11 +184,8 @@ public class Step4ExecuteStepsNode extends AbstractExecuteSupport {
             Thread.sleep(1000);
 
         } catch (Exception e) {
-            log.error("执行步骤 {} 时发生错误: {}", stepNumber, e.getMessage());
-            dynamicContext.setValue("step" + stepNumber + "Error", e.getMessage());
-
-            // 记录错误但继续执行下一步
             handleStepExecutionError(stepNumber, stepKey, e, dynamicContext);
+            throw new IllegalStateException("第" + stepNumber + "步执行失败", e);
         }
 
         log.info("--- 完成执行 {} ---", stepKey);
@@ -222,25 +229,65 @@ public class Step4ExecuteStepsNode extends AbstractExecuteSupport {
     /**
      * 构建步骤执行提示词
      */
-    private String buildStepExecutionPrompt(String stepContent, DefaultFlowAgentExecuteStrategyFactory.DynamicContext dynamicContext) {
-        return "你是一个智能执行助手，需要执行以下步骤:\n\n" +
-                "**步骤内容:**\n" +
-                stepContent + "\n\n" +
-                "**用户原始请求:**\n" +
-                dynamicContext.getCurrentTask() + "\n\n" +
-                "**执行要求:**\n" +
-                "1. 仔细分析步骤内容，理解需要执行的具体任务\n" +
-                "2. 如果涉及MCP工具调用，请使用相应的工具\n" +
-                "3. 提供详细的执行过程和结果\n" +
-                "4. 如果遇到问题，请说明具体的错误信息\n" +
-                "5. **重要**: 执行完成后，必须在回复末尾明确输出执行结果，格式如下:\n" +
-                "   ```\n" +
-                "   === 执行结果 ===\n" +
-                "   状态: [成功/失败]\n" +
-                "   结果描述: [具体的执行结果描述]\n" +
-                "   输出数据: [如果有具体的输出数据，请在此列出]\n" +
-                "   ```\n\n" +
-                "请开始执行这个步骤，并严格按照要求提供详细的执行报告和结果输出。";
+    private String buildStepExecutionPrompt(int currentStep, String stepContent, DefaultFlowAgentExecuteStrategyFactory.DynamicContext dynamicContext) {
+        return """
+            你是一个智能执行助手，需要执行以下步骤。
+
+            **当前步骤编号：**
+            第%d步
+
+            **步骤内容：**
+            %s
+
+            **用户原始请求：**
+            %s
+
+            **已完成步骤的真实结果：**
+            %s
+
+            **执行要求：**
+            1. 仔细分析步骤内容，理解需要执行的具体任务。
+            2. 如果涉及 MCP 工具调用，请使用当前步骤指定的相应工具。
+            3. 只能执行当前步骤，不得提前执行后续步骤。
+            4. 后续步骤必须使用“已完成步骤的真实结果”中的数据，不得重新编造文章内容、发布状态或文章 URL。
+            5. 提供详细的执行过程和结果，使用 Markdown 格式组织内容。
+            6. 如果遇到问题，请说明具体的错误信息；工具失败时不得声称成功。
+            7. **重要**：执行完成后，必须在回复末尾明确输出执行结果，格式如下：
+
+               ```
+               === 执行结果 ===
+               状态: [成功/失败]
+               结果描述: [具体的执行结果描述]
+               输出数据: [如果有具体的输出数据，请在此列出]
+               ```
+
+            请开始执行当前步骤，并严格按照要求提供详细的执行报告和结果输出。
+            """.formatted(
+                currentStep,
+                stepContent,
+                dynamicContext.getCurrentTask(),
+                getPreviousStepResults(currentStep, dynamicContext)
+        );
+    }
+
+    private String getPreviousStepResults(
+            int currentStep,
+            DefaultFlowAgentExecuteStrategyFactory.DynamicContext dynamicContext
+    ) {
+        StringBuilder results = new StringBuilder();
+
+        for (int step = 1; step < currentStep; step++) {
+            String result = dynamicContext.getValue("step" + step + "Result");
+            if (result != null && !result.isBlank()) {
+                results.append("### 第")
+                        .append(step)
+                        .append("步真实结果\n")
+                        .append(result)
+                        .append("\n\n");
+            }
+        }
+
+        return results.isEmpty() ? "无" : results.toString();
     }
     
     /**
