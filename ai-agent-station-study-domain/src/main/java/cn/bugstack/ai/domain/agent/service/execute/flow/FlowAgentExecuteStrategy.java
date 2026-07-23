@@ -34,18 +34,27 @@ public class FlowAgentExecuteStrategy implements IExecuteStrategy {
         dynamicContext.setExecutionHistory(new StringBuilder());
         dynamicContext.setCurrentTask(executeCommandEntity.getMessage());
         dynamicContext.setValue("emitter", emitter);
-        
-        String apply = executeHandler.apply(executeCommandEntity, dynamicContext);
-        log.info("流程执行结果:{}", apply);
-        
-        // 发送完成标识
+        dynamicContext.setValue("sessionId", executeCommandEntity.getSessionId());
+
         try {
-            AutoAgentExecuteResultEntity completeResult = AutoAgentExecuteResultEntity.createCompleteResult(executeCommandEntity.getSessionId());
-            // 发送SSE格式的数据
-            String sseData = "data: " + JSON.toJSONString(completeResult) + "\n\n";
-            emitter.send(sseData);
+            String apply = executeHandler.apply(executeCommandEntity, dynamicContext);
+            log.info("流程执行结果:{}", apply);
+
+            AutoAgentExecuteResultEntity completeResult =
+                    AutoAgentExecuteResultEntity.createCompleteResult(
+                            executeCommandEntity.getSessionId()
+                    );
+            emitter.send("data: " + JSON.toJSONString(completeResult) + "\n\n");
         } catch (Exception e) {
-            log.error("发送完成标识失败：{}", e.getMessage(), e);
+            log.error("Flow 执行失败", e);
+
+            AutoAgentExecuteResultEntity errorResult =
+                    AutoAgentExecuteResultEntity.createErrorResult(
+                            "流程执行失败：" + e.getMessage(),
+                            executeCommandEntity.getSessionId()
+                    );
+
+            emitter.send("data: " + JSON.toJSONString(errorResult) + "\n\n");
         }
     }
 
