@@ -97,7 +97,7 @@ public class AiClientToolMcpNode extends AbstractArmorySupport {
                         .sseEndpoint(sseEndpoint) // 使用截取或默认的 sseEndpoint
                         .build();
 
-                McpSyncClient mcpSyncClient = McpClient.sync(sseClientTransport).requestTimeout(Duration.ofMinutes(aiClientToolMcpVO.getRequestTimeout())).build();
+                McpSyncClient mcpSyncClient = McpClient.sync(sseClientTransport).requestTimeout(Duration.ofSeconds(aiClientToolMcpVO.getRequestTimeout())).build();
                 var init_sse = mcpSyncClient.initialize();
 
                 log.info("Tool SSE MCP Initialized {}", init_sse);

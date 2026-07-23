@@ -41,7 +41,7 @@ public class AiClientToolMcpVO {
     private String transportConfig;
 
     /**
-     * 请求超时时间(分钟)
+     * 请求超时时间(秒)
      */
     private Integer requestTimeout;
 
