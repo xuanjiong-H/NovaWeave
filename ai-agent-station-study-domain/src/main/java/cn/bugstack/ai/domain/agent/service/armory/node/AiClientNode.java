@@ -21,9 +21,12 @@ import org.springframework.ai.tool.ToolCallback;
 import org.springframework.ai.tool.definition.ToolDefinition;
 import org.springframework.ai.tool.metadata.ToolMetadata;
 
+import java.time.Duration;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.function.Supplier;
 import java.util.regex.Matcher;
@@ -38,6 +41,11 @@ import java.util.regex.Pattern;
 @Slf4j
 @Service
 public class AiClientNode extends AbstractArmorySupport {
+
+    private static final Pattern GRAFANA_RELATIVE_TIME_PATTERN = Pattern.compile(
+            "^now(?:-(\\d+)([smhdw]))?$",
+            Pattern.CASE_INSENSITIVE
+    );
 
     @Override
     protected String doApply(ArmoryCommandEntity requestParameter, DefaultArmoryStrategyFactory.DynamicContext dynamicContext) throws Exception {
@@ -124,10 +132,19 @@ public class AiClientNode extends AbstractArmorySupport {
     }
 
     private String normalizeToolInput(ToolCallback delegate, String toolInput) {
-        if (!delegate.getToolDefinition().name().contains("JavaSDKMCPClient_saveArticle")) {
-            return toolInput;
+        String toolName = delegate.getToolDefinition().name();
+        if (toolName.contains("JavaSDKMCPClient_saveArticle")) {
+            return normalizeCsdnArticleInput(toolInput);
         }
 
+        if (toolName.toLowerCase(Locale.ROOT).contains("prometheus")) {
+            return normalizeGrafanaTimeInput(toolName, toolInput);
+        }
+
+        return toolInput;
+    }
+
+    private String normalizeCsdnArticleInput(String toolInput) {
         try {
             JSONObject toolArguments = JSON.parseObject(toolInput);
             JSONObject request = toolArguments.getJSONObject("request");
@@ -147,6 +164,53 @@ public class AiClientNode extends AbstractArmorySupport {
             log.warn("CSDN 发帖参数规范化失败，将使用原始参数", e);
             return toolInput;
         }
+    }
+
+    private String normalizeGrafanaTimeInput(String toolName, String toolInput) {
+        try {
+            JSONObject toolArguments = JSON.parseObject(toolInput);
+            Instant now = Instant.now();
+            boolean startChanged = normalizeGrafanaTimeField(toolArguments, "start", now);
+            boolean endChanged = normalizeGrafanaTimeField(toolArguments, "end", now);
+
+            if (startChanged || endChanged) {
+                log.info("已将 Grafana MCP 相对时间转换为 RFC3339: toolName={}", toolName);
+                return JSON.toJSONString(toolArguments);
+            }
+            return toolInput;
+        } catch (Exception e) {
+            log.warn("Grafana MCP 时间参数规范化失败，将使用原始参数: toolName={}", toolName, e);
+            return toolInput;
+        }
+    }
+
+    private boolean normalizeGrafanaTimeField(JSONObject toolArguments, String fieldName, Instant now) {
+        String value = toolArguments.getString(fieldName);
+        if (value == null || value.isBlank()) {
+            return false;
+        }
+
+        Matcher matcher = GRAFANA_RELATIVE_TIME_PATTERN.matcher(value.trim());
+        if (!matcher.matches()) {
+            return false;
+        }
+
+        Instant normalizedTime = now;
+        if (matcher.group(1) != null) {
+            long amount = Long.parseLong(matcher.group(1));
+            Duration duration = switch (matcher.group(2).toLowerCase(Locale.ROOT)) {
+                case "s" -> Duration.ofSeconds(amount);
+                case "m" -> Duration.ofMinutes(amount);
+                case "h" -> Duration.ofHours(amount);
+                case "d" -> Duration.ofDays(amount);
+                case "w" -> Duration.ofDays(Math.multiplyExact(amount, 7));
+                default -> throw new IllegalArgumentException("Unsupported Grafana time unit");
+            };
+            normalizedTime = now.minus(duration);
+        }
+
+        toolArguments.put(fieldName, normalizedTime.toString());
+        return true;
     }
 
     private String unwrapOuterMarkdownFence(String content) {
