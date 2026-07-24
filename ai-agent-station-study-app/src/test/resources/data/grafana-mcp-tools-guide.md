@@ -258,9 +258,8 @@ irate(node_network_transmit_bytes_total{device!="lo"}[5m]) * 8
    ```
    grafana/query_prometheus
    query: node_cpu_seconds_total
-   start: now-1h
-   end: now
    ```
+   实时查询省略 `start` 和 `end`，以 Prometheus 查询时刻为准。只有查询历史趋势时才传入 RFC3339 格式的绝对时间。
 
 ## 最佳实践
 
