@@ -23,6 +23,7 @@ import org.springframework.ai.tool.metadata.ToolMetadata;
 
 import java.time.Duration;
 import java.time.Instant;
+import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -45,6 +46,12 @@ public class AiClientNode extends AbstractArmorySupport {
     private static final Pattern GRAFANA_RELATIVE_TIME_PATTERN = Pattern.compile(
             "^now(?:-(\\d+)([smhdw]))?$",
             Pattern.CASE_INSENSITIVE
+    );
+
+    private static final List<String> GRAFANA_TIME_FIELDS = List.of(
+            "start", "end",
+            "startRfc3339", "endRfc3339",
+            "startTime", "endTime"
     );
 
     @Override
@@ -170,10 +177,12 @@ public class AiClientNode extends AbstractArmorySupport {
         try {
             JSONObject toolArguments = JSON.parseObject(toolInput);
             Instant now = Instant.now();
-            boolean startChanged = normalizeGrafanaTimeField(toolArguments, "start", now);
-            boolean endChanged = normalizeGrafanaTimeField(toolArguments, "end", now);
+            boolean timeChanged = false;
+            for (String fieldName : GRAFANA_TIME_FIELDS) {
+                timeChanged |= normalizeGrafanaTimeField(toolArguments, fieldName, now);
+            }
 
-            if (startChanged || endChanged) {
+            if (timeChanged) {
                 log.info("已将 Grafana MCP 相对时间转换为 RFC3339: toolName={}", toolName);
                 return JSON.toJSONString(toolArguments);
             }
@@ -209,7 +218,7 @@ public class AiClientNode extends AbstractArmorySupport {
             normalizedTime = now.minus(duration);
         }
 
-        toolArguments.put(fieldName, normalizedTime.toString());
+        toolArguments.put(fieldName, normalizedTime.truncatedTo(ChronoUnit.SECONDS).toString());
         return true;
     }
 
