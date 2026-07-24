@@ -5,12 +5,17 @@ import cn.bugstack.ai.domain.agent.model.entity.ExecuteCommandEntity;
 import cn.bugstack.ai.domain.agent.model.valobj.AiAgentClientFlowConfigVO;
 import cn.bugstack.ai.domain.agent.model.valobj.enums.AiClientTypeEnumVO;
 import cn.bugstack.ai.domain.agent.service.execute.flow.step.factory.DefaultFlowAgentExecuteStrategyFactory;
+import cn.bugstack.ai.domain.agent.service.tool.ToolExecutionTrace;
+import cn.bugstack.ai.domain.agent.service.tool.ToolExecutionTrace.ToolExecutionRecord;
 import cn.bugstack.wrench.design.framework.tree.StrategyHandler;
+import com.alibaba.fastjson.JSON;
+import com.alibaba.fastjson.JSONObject;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.ai.chat.client.ChatClient;
 import org.springframework.stereotype.Component;
 
 import jakarta.annotation.Resource;
+import java.net.URI;
 import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -63,9 +68,6 @@ public class Step4ExecuteStepsNode extends AbstractExecuteSupport {
             
             // 发送总结结果到【最终执行结果】区域
             sendSummaryResult(dynamicContext, request.getSessionId());
-            
-            // 发送完成标识
-            sendCompleteResult(dynamicContext, request.getSessionId());
             
             // 更新步骤
             dynamicContext.setStep(dynamicContext.getStep() + 1);
@@ -152,11 +154,19 @@ public class Step4ExecuteStepsNode extends AbstractExecuteSupport {
                     dynamicContext
             );
 
-            // 使用执行器ChatClient来执行具体步骤
-            String executionResult = executorChatClient.prompt()
-                    .user(executionPrompt)
-                    .call()
-                    .content();
+            ToolExecutionTrace.start();
+            String executionResult;
+            List<ToolExecutionRecord> toolExecutionRecords;
+            try {
+                // 使用执行器ChatClient来执行具体步骤
+                executionResult = executorChatClient.prompt()
+                        .user(executionPrompt)
+                        .call()
+                        .content();
+                toolExecutionRecords = ToolExecutionTrace.snapshot();
+            } finally {
+                ToolExecutionTrace.clear();
+            }
 
             if (executionResult == null || executionResult.isBlank()) {
                 throw new IllegalStateException(
@@ -165,8 +175,16 @@ public class Step4ExecuteStepsNode extends AbstractExecuteSupport {
             }
             log.info("步骤 {} 执行结果: {}", stepNumber, executionResult.substring(0, Math.min(150, executionResult.length())) + "...");
 
+            String verifiedExecutionResult = buildVerifiedExecutionResult(
+                    executionResult,
+                    toolExecutionRecords
+            );
+
             // 保存执行结果
-            dynamicContext.setValue("step" + stepNumber + "Result", executionResult);
+            dynamicContext.setValue("step" + stepNumber + "Result", verifiedExecutionResult);
+            dynamicContext.setValue("step" + stepNumber + "ModelResult", executionResult);
+            dynamicContext.setValue("step" + stepNumber + "ToolExecutionRecords", toolExecutionRecords);
+            appendExecutionHistory(dynamicContext, stepNumber, stepKey, toolExecutionRecords);
             
             // 发送步骤执行结果的SSE
             String requestSessionId = dynamicContext.getValue("sessionId");
@@ -175,10 +193,15 @@ public class Step4ExecuteStepsNode extends AbstractExecuteSupport {
             }
             AutoAgentExecuteResultEntity stepResult = AutoAgentExecuteResultEntity.createExecutionResult(
                     stepNumber,
-                    "## " + stepKey + " 执行结果\n\n" + executionResult,
+                    "## " + stepKey + " 执行结果\n\n" + verifiedExecutionResult,
                     requestSessionId
             );
             sendSseResult(dynamicContext, stepResult);
+
+            if (!toolExecutionRecords.isEmpty()
+                    && toolExecutionRecords.stream().anyMatch(record -> !isSuccessfulToolResult(record))) {
+                throw new IllegalStateException("MCP工具未返回成功的真实执行结果");
+            }
 
             // 短暂延迟，避免请求过于频繁
             Thread.sleep(1000);
@@ -318,12 +341,155 @@ public class Step4ExecuteStepsNode extends AbstractExecuteSupport {
         log.info("📊 已发送总结结果到【最终执行结果】区域");
     }
     
-    /**
-     * 发送完成标识到流式输出
-     */
-    private void sendCompleteResult(DefaultFlowAgentExecuteStrategyFactory.DynamicContext dynamicContext, String sessionId) {
-        AutoAgentExecuteResultEntity result = AutoAgentExecuteResultEntity.createCompleteResult(sessionId);
-        sendSseResult(dynamicContext, result);
-        log.info("✅ 已发送完成标识");
+    private void appendExecutionHistory(
+            DefaultFlowAgentExecuteStrategyFactory.DynamicContext dynamicContext,
+            int stepNumber,
+            String stepKey,
+            List<ToolExecutionRecord> toolExecutionRecords
+    ) {
+        if (toolExecutionRecords.isEmpty()) {
+            return;
+        }
+
+        StringBuilder executionHistory = dynamicContext.getExecutionHistory();
+        executionHistory.append("### ").append(stepKey).append("\n");
+
+        for (ToolExecutionRecord record : toolExecutionRecords) {
+            boolean succeeded = isSuccessfulToolResult(record);
+            executionHistory.append("- ").append(toolDisplayName(record.toolName()))
+                    .append("：").append(succeeded ? "成功" : "失败").append("\n");
+
+            if (succeeded) {
+                String articleUrl = extractArticleUrl(record.output());
+                if (articleUrl != null) {
+                    executionHistory.append("- 文章地址：[")
+                            .append(articleUrl)
+                            .append("](")
+                            .append(articleUrl)
+                            .append(")\n");
+                }
+                executionHistory.append("- 工具真实返回：`")
+                        .append(escapeInlineCode(toSingleLine(record.output())))
+                        .append("`\n");
+            } else {
+                String errorMessage = record.errorMessage() == null ? record.output() : record.errorMessage();
+                executionHistory.append("- 错误信息：").append(errorMessage).append("\n");
+            }
+            executionHistory.append('\n');
+        }
+    }
+
+    private String extractArticleUrl(String toolOutput) {
+        if (toolOutput == null) {
+            return null;
+        }
+
+        Matcher matcher = Pattern.compile("https?://[^\\s\\\"'<>\\\\]+")
+                .matcher(toolOutput);
+        while (matcher.find()) {
+            String candidate = matcher.group();
+            try {
+                URI uri = URI.create(candidate);
+                String host = uri.getHost();
+                String path = uri.getPath();
+                if (host != null
+                        && (host.equals("blog.csdn.net") || host.endsWith(".blog.csdn.net"))
+                        && path != null
+                        && path.contains("/article/details/")) {
+                    return candidate;
+                }
+            } catch (IllegalArgumentException ignored) {
+                // Continue checking other URLs returned by the tool.
+            }
+        }
+        return null;
+    }
+
+    private boolean isSuccessfulToolResult(ToolExecutionRecord record) {
+        if (!record.succeeded() || record.output() == null || record.output().isBlank()) {
+            return false;
+        }
+
+        try {
+            JSONObject result = JSON.parseObject(record.output());
+            if (result.containsKey("success") && !result.getBooleanValue("success")) {
+                return false;
+            }
+        } catch (Exception ignored) {
+            String normalizedOutput = record.output().toLowerCase(Locale.ROOT);
+            if (normalizedOutput.contains("失败")
+                    || normalizedOutput.contains("error")
+                    || normalizedOutput.contains("failed")) {
+                return false;
+            }
+        }
+
+        return !isCsdnPublishTool(record.toolName()) || extractArticleUrl(record.output()) != null;
+    }
+
+    private String toolDisplayName(String toolName) {
+        if (isCsdnPublishTool(toolName)) {
+            return "CSDN 发帖";
+        }
+        if (isWeixinNoticeTool(toolName)) {
+            return "微信公众号消息通知";
+        }
+        return "工具 `" + toolName + "` 调用";
+    }
+
+    private boolean isCsdnPublishTool(String toolName) {
+        return toolName.contains("JavaSDKMCPClient_saveArticle");
+    }
+
+    private boolean isWeixinNoticeTool(String toolName) {
+        return toolName.contains("JavaSDKMCPClient_weixinNotice");
+    }
+
+    private String buildVerifiedExecutionResult(
+            String modelResult,
+            List<ToolExecutionRecord> toolExecutionRecords
+    ) {
+        if (toolExecutionRecords.isEmpty()) {
+            return modelResult;
+        }
+
+        boolean allSucceeded = toolExecutionRecords.stream().allMatch(this::isSuccessfulToolResult);
+        StringBuilder result = new StringBuilder();
+        result.append("=== 执行结果 ===\n");
+        result.append("状态: ").append(allSucceeded ? "成功" : "失败").append("\n");
+
+        for (ToolExecutionRecord record : toolExecutionRecords) {
+            boolean succeeded = isSuccessfulToolResult(record);
+            result.append("\n### ").append(toolDisplayName(record.toolName())).append("\n");
+            result.append("- 状态：").append(succeeded ? "成功" : "失败").append("\n");
+
+            String articleUrl = isCsdnPublishTool(record.toolName())
+                    ? extractArticleUrl(record.output())
+                    : null;
+            if (articleUrl != null) {
+                result.append("- 文章地址：[").append(articleUrl).append("](")
+                        .append(articleUrl).append(")\n");
+            } else if (isCsdnPublishTool(record.toolName())) {
+                result.append("- 文章地址：工具未返回有效的 CSDN 帖子地址\n");
+            }
+
+            String toolOutput = record.errorMessage() == null ? record.output() : record.errorMessage();
+            result.append("- 工具真实返回：`")
+                    .append(escapeInlineCode(toSingleLine(toolOutput)))
+                    .append("`\n");
+        }
+
+        return result.toString();
+    }
+
+    private String toSingleLine(String value) {
+        if (value == null || value.isBlank()) {
+            return "(空返回)";
+        }
+        return value.replaceAll("[\\r\\n]+", " ");
+    }
+
+    private String escapeInlineCode(String value) {
+        return value.replace("`", "\\`");
     }
 }

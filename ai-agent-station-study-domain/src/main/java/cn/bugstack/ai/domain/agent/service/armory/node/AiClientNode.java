@@ -5,19 +5,29 @@ import cn.bugstack.ai.domain.agent.model.valobj.enums.AiAgentEnumVO;
 import cn.bugstack.ai.domain.agent.model.valobj.AiClientSystemPromptVO;
 import cn.bugstack.ai.domain.agent.model.valobj.AiClientVO;
 import cn.bugstack.ai.domain.agent.service.armory.node.factory.DefaultArmoryStrategyFactory;
+import cn.bugstack.ai.domain.agent.service.tool.ToolExecutionTrace;
 import cn.bugstack.wrench.design.framework.tree.StrategyHandler;
 import com.alibaba.fastjson.JSON;
+import com.alibaba.fastjson.JSONObject;
 import io.modelcontextprotocol.client.McpSyncClient;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.ai.chat.client.ChatClient;
 import org.springframework.ai.chat.client.advisor.api.Advisor;
+import org.springframework.ai.chat.model.ToolContext;
 import org.springframework.ai.mcp.SyncMcpToolCallbackProvider;
 import org.springframework.ai.openai.OpenAiChatModel;
 import org.springframework.stereotype.Service;
+import org.springframework.ai.tool.ToolCallback;
+import org.springframework.ai.tool.definition.ToolDefinition;
+import org.springframework.ai.tool.metadata.ToolMetadata;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
+import java.util.function.Supplier;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 /**
  * ai agent 客户端对话对象节点
@@ -68,11 +78,16 @@ public class AiClientNode extends AbstractArmorySupport {
             }
 
             Advisor[] advisorArray = advisors.toArray(new Advisor[]{});
+            ToolCallback[] toolCallbacks = Arrays.stream(new SyncMcpToolCallbackProvider(
+                            mcpSyncClients.toArray(new McpSyncClient[]{}))
+                    .getToolCallbacks())
+                    .map(this::traceToolCallback)
+                    .toArray(ToolCallback[]::new);
 
             // 5. 构建对话客户端
             ChatClient chatClient = ChatClient.builder(chatModel)
                     .defaultSystem(defaultSystem.toString())
-                    .defaultToolCallbacks(new SyncMcpToolCallbackProvider(mcpSyncClients.toArray(new McpSyncClient[]{})))
+                    .defaultToolCallbacks(toolCallbacks)
                     .defaultAdvisors(advisorArray)
                     .build();
 
@@ -80,6 +95,88 @@ public class AiClientNode extends AbstractArmorySupport {
         }
 
         return router(requestParameter, dynamicContext);
+    }
+
+    private ToolCallback traceToolCallback(ToolCallback delegate) {
+        return new ToolCallback() {
+            @Override
+            public ToolDefinition getToolDefinition() {
+                return delegate.getToolDefinition();
+            }
+
+            @Override
+            public ToolMetadata getToolMetadata() {
+                return delegate.getToolMetadata();
+            }
+
+            @Override
+            public String call(String toolInput) {
+                String normalizedInput = normalizeToolInput(delegate, toolInput);
+                return invokeTool(delegate, () -> delegate.call(normalizedInput));
+            }
+
+            @Override
+            public String call(String toolInput, ToolContext toolContext) {
+                String normalizedInput = normalizeToolInput(delegate, toolInput);
+                return invokeTool(delegate, () -> delegate.call(normalizedInput, toolContext));
+            }
+        };
+    }
+
+    private String normalizeToolInput(ToolCallback delegate, String toolInput) {
+        if (!delegate.getToolDefinition().name().contains("JavaSDKMCPClient_saveArticle")) {
+            return toolInput;
+        }
+
+        try {
+            JSONObject toolArguments = JSON.parseObject(toolInput);
+            JSONObject request = toolArguments.getJSONObject("request");
+            if (request == null) {
+                return toolInput;
+            }
+
+            String content = request.getString("content");
+            String normalizedContent = unwrapOuterMarkdownFence(content);
+            if (!normalizedContent.equals(content)) {
+                request.put("content", normalizedContent);
+                log.info("已移除 CSDN 文章正文的外层 Markdown 代码围栏");
+            }
+
+            return JSON.toJSONString(toolArguments);
+        } catch (Exception e) {
+            log.warn("CSDN 发帖参数规范化失败，将使用原始参数", e);
+            return toolInput;
+        }
+    }
+
+    private String unwrapOuterMarkdownFence(String content) {
+        if (content == null || content.isBlank()) {
+            return content;
+        }
+
+        Pattern outerFencePattern = Pattern.compile(
+                "^\\s*```(?:markdown|md)?\\s*\\R([\\s\\S]*?)\\R?```\\s*$",
+                Pattern.CASE_INSENSITIVE
+        );
+        Matcher matcher = outerFencePattern.matcher(content);
+        return matcher.matches() ? matcher.group(1).trim() : content;
+    }
+
+    private String invokeTool(ToolCallback delegate, Supplier<String> invocation) {
+        String toolName = delegate.getToolDefinition().name();
+        long startedAt = System.nanoTime();
+        try {
+            String output = invocation.get();
+            long durationMillis = (System.nanoTime() - startedAt) / 1_000_000;
+            ToolExecutionTrace.recordSuccess(toolName, output, durationMillis);
+            log.info("MCP工具调用完成: toolName={}, duration={}ms", toolName, durationMillis);
+            return output;
+        } catch (RuntimeException e) {
+            long durationMillis = (System.nanoTime() - startedAt) / 1_000_000;
+            ToolExecutionTrace.recordFailure(toolName, e.getMessage(), durationMillis);
+            log.error("MCP工具调用失败: toolName={}, duration={}ms", toolName, durationMillis, e);
+            throw e;
+        }
     }
 
     @Override
