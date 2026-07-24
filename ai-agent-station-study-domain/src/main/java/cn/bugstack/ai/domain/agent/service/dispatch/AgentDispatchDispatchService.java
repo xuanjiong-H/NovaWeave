@@ -1,10 +1,13 @@
 package cn.bugstack.ai.domain.agent.service.dispatch;
 
 import cn.bugstack.ai.domain.agent.adapter.repository.IAgentRepository;
+import cn.bugstack.ai.domain.agent.model.entity.AutoAgentExecuteResultEntity;
 import cn.bugstack.ai.domain.agent.model.entity.ExecuteCommandEntity;
 import cn.bugstack.ai.domain.agent.model.valobj.AiAgentVO;
 import cn.bugstack.ai.domain.agent.service.IAgentDispatchService;
 import cn.bugstack.ai.domain.agent.service.IExecuteStrategy;
+import cn.bugstack.ai.domain.agent.service.sse.SseConnectionClosedException;
+import cn.bugstack.ai.domain.agent.service.sse.SseEmitterSupport;
 import cn.bugstack.ai.types.exception.BizException;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -48,11 +51,17 @@ public class AgentDispatchDispatchService implements IAgentDispatchService {
             try {
                 executeStrategy.execute(requestParameter, emitter);
             } catch (Exception e) {
+                if (SseConnectionClosedException.isCausedBy(e)) {
+                    log.info("SSE客户端已断开，终止Agent执行，sessionId={}", requestParameter.getSessionId());
+                    return;
+                }
                 log.error("AutoAgent执行异常：{}", e.getMessage(), e);
                 try {
-                    emitter.send("执行异常：" + e.getMessage());
-                } catch (Exception ex) {
-                    log.error("发送异常信息失败：{}", ex.getMessage(), ex);
+                    SseEmitterSupport.send(emitter,
+                            AutoAgentExecuteResultEntity.createErrorResult(
+                                    "执行异常：" + e.getMessage(), requestParameter.getSessionId()));
+                } catch (SseConnectionClosedException ex) {
+                    log.info("发送异常信息时SSE客户端已断开，sessionId={}", requestParameter.getSessionId());
                 }
             } finally {
                 try {

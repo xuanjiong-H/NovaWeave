@@ -5,16 +5,13 @@ import cn.bugstack.ai.domain.agent.model.entity.AutoAgentExecuteResultEntity;
 import cn.bugstack.ai.domain.agent.model.entity.ExecuteCommandEntity;
 import cn.bugstack.ai.domain.agent.model.valobj.enums.AiAgentEnumVO;
 import cn.bugstack.ai.domain.agent.service.execute.flow.step.factory.DefaultFlowAgentExecuteStrategyFactory;
+import cn.bugstack.ai.domain.agent.service.sse.SseEmitterSupport;
 import cn.bugstack.wrench.design.framework.tree.AbstractMultiThreadStrategyRouter;
-import com.alibaba.fastjson.JSON;
 import jakarta.annotation.Resource;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.ai.chat.client.ChatClient;
 import org.springframework.context.ApplicationContext;
 import org.springframework.web.servlet.mvc.method.annotation.ResponseBodyEmitter;
 
-import java.io.IOException;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeoutException;
 
@@ -25,8 +22,6 @@ import java.util.concurrent.TimeoutException;
  * 2025/8/24 14:28
  */
 public abstract class AbstractExecuteSupport extends AbstractMultiThreadStrategyRouter<ExecuteCommandEntity, DefaultFlowAgentExecuteStrategyFactory.DynamicContext, String> {
-
-    private final Logger log = LoggerFactory.getLogger(AbstractExecuteSupport.class);
 
     @Resource
     protected ApplicationContext applicationContext;
@@ -57,15 +52,9 @@ public abstract class AbstractExecuteSupport extends AbstractMultiThreadStrategy
      */
     protected void sendSseResult(DefaultFlowAgentExecuteStrategyFactory.DynamicContext dynamicContext, 
                                 AutoAgentExecuteResultEntity result) {
-        try {
-            ResponseBodyEmitter emitter = dynamicContext.getValue("emitter");
-            if (emitter != null) {
-                // 发送SSE格式的数据
-                String sseData = "data: " + JSON.toJSONString(result) + "\n\n";
-                emitter.send(sseData);
-            }
-        } catch (IOException e) {
-            log.error("发送SSE结果失败：{}", e.getMessage(), e);
+        ResponseBodyEmitter emitter = dynamicContext.getValue("emitter");
+        if (emitter != null) {
+            SseEmitterSupport.send(emitter, result);
         }
     }
 

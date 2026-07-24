@@ -4,8 +4,9 @@ import cn.bugstack.ai.domain.agent.model.entity.AutoAgentExecuteResultEntity;
 import cn.bugstack.ai.domain.agent.model.entity.ExecuteCommandEntity;
 import cn.bugstack.ai.domain.agent.service.IExecuteStrategy;
 import cn.bugstack.ai.domain.agent.service.execute.flow.step.factory.DefaultFlowAgentExecuteStrategyFactory;
+import cn.bugstack.ai.domain.agent.service.sse.SseConnectionClosedException;
+import cn.bugstack.ai.domain.agent.service.sse.SseEmitterSupport;
 import cn.bugstack.wrench.design.framework.tree.StrategyHandler;
-import com.alibaba.fastjson.JSON;
 import jakarta.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -44,8 +45,11 @@ public class FlowAgentExecuteStrategy implements IExecuteStrategy {
                     AutoAgentExecuteResultEntity.createCompleteResult(
                             executeCommandEntity.getSessionId()
                     );
-            emitter.send("data: " + JSON.toJSONString(completeResult) + "\n\n");
+            SseEmitterSupport.send(emitter, completeResult);
         } catch (Exception e) {
+            if (SseConnectionClosedException.isCausedBy(e)) {
+                throw e;
+            }
             log.error("Flow 执行失败", e);
 
             AutoAgentExecuteResultEntity errorResult =
@@ -54,7 +58,7 @@ public class FlowAgentExecuteStrategy implements IExecuteStrategy {
                             executeCommandEntity.getSessionId()
                     );
 
-            emitter.send("data: " + JSON.toJSONString(errorResult) + "\n\n");
+            SseEmitterSupport.send(emitter, errorResult);
         }
     }
 
