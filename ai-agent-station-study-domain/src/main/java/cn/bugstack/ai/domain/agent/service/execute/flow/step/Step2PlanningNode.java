@@ -3,21 +3,14 @@ package cn.bugstack.ai.domain.agent.service.execute.flow.step;
 import cn.bugstack.ai.domain.agent.model.entity.AutoAgentExecuteResultEntity;
 import cn.bugstack.ai.domain.agent.model.entity.ExecuteCommandEntity;
 import cn.bugstack.ai.domain.agent.model.valobj.AiAgentClientFlowConfigVO;
-import cn.bugstack.ai.domain.agent.model.valobj.AiClientVO;
 import cn.bugstack.ai.domain.agent.model.valobj.enums.AiClientTypeEnumVO;
 import cn.bugstack.ai.domain.agent.service.execute.flow.step.factory.DefaultFlowAgentExecuteStrategyFactory;
+import cn.bugstack.ai.domain.agent.service.tool.McpToolCatalogService;
 import cn.bugstack.wrench.design.framework.tree.StrategyHandler;
-import io.modelcontextprotocol.client.McpSyncClient;
 import jakarta.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.ai.chat.client.ChatClient;
-import org.springframework.ai.mcp.SyncMcpToolCallbackProvider;
-import org.springframework.ai.tool.ToolCallback;
-import org.springframework.ai.tool.definition.ToolDefinition;
 import org.springframework.stereotype.Service;
-
-import java.util.ArrayList;
-import java.util.List;
 
 /**
  * 步骤2：执行步骤规划节点
@@ -31,6 +24,9 @@ public class Step2PlanningNode extends AbstractExecuteSupport {
 
      @Resource
      private Step3ParseStepsNode step3ParseStepsNode;
+
+     @Resource
+     private McpToolCatalogService mcpToolCatalogService;
 
     @Override
     protected String doApply(ExecuteCommandEntity requestParameter, DefaultFlowAgentExecuteStrategyFactory.DynamicContext dynamicContext) throws Exception {
@@ -50,7 +46,7 @@ public class Step2PlanningNode extends AbstractExecuteSupport {
                 .get(AiClientTypeEnumVO.EXECUTOR_CLIENT.getCode());
         String actualMcpToolsInfo = executorClientConfig == null
                 ? "未找到执行器 Client 配置，无法获取 MCP 工具清单。\n"
-                : getActualMcpToolsInfo(executorClientConfig.getClientId());
+                : mcpToolCatalogService.describeTools(executorClientConfig.getClientId());
         log.info("执行器实际注册的 MCP 工具清单:\n{}", actualMcpToolsInfo);
 
         String planningPrompt = buildStructuredPlanningPrompt(
@@ -139,57 +135,6 @@ public class Step2PlanningNode extends AbstractExecuteSupport {
             - 工具参数：符合 Schema 的参数来源或结构
             - 预期输出：本步骤真实产物
             """.formatted(userRequest, actualMcpToolsInfo);
-    }
-
-    /**
-     * 获取实际的MCP工具信息
-     */
-    private String getActualMcpToolsInfo(String executorClientId) {
-        try {
-            List<AiClientVO> clientList = repository.AiClientVOByClientIds(List.of(executorClientId));
-            if (clientList == null || clientList.isEmpty()) {
-                return "未找到执行器 Client 配置，clientId=" + executorClientId + "。\n";
-            }
-
-            AiClientVO executorClient = clientList.get(0);
-            List<String> mcpBeanNameList = executorClient.getMcpBeanNameList();
-            if (mcpBeanNameList == null || mcpBeanNameList.isEmpty()) {
-                return "执行器未直接绑定 MCP 工具，clientId=" + executorClientId + "。\n";
-            }
-
-            List<McpSyncClient> mcpClients = new ArrayList<>();
-            for (String mcpBeanName : mcpBeanNameList) {
-                mcpClients.add(getBean(mcpBeanName));
-            }
-
-            ToolCallback[] toolCallbacks = new SyncMcpToolCallbackProvider(
-                    mcpClients.toArray(new McpSyncClient[0])
-            ).getToolCallbacks();
-            if (toolCallbacks.length == 0) {
-                return "执行器绑定的 MCP 服务没有返回可用工具，clientId=" + executorClientId + "。\n";
-            }
-
-            StringBuilder toolsInfo = new StringBuilder();
-            for (ToolCallback toolCallback : toolCallbacks) {
-                ToolDefinition definition = toolCallback.getToolDefinition();
-                String description = definition.description();
-                String inputSchema = definition.inputSchema();
-
-                toolsInfo.append("#### `").append(definition.name()).append("`\n");
-                toolsInfo.append("- 描述：")
-                        .append(description == null || description.isBlank() ? "未提供" : description)
-                        .append("\n");
-                toolsInfo.append("- 输入参数 Schema：\n```json\n")
-                        .append(inputSchema == null || inputSchema.isBlank() ? "{}" : inputSchema)
-                        .append("\n```\n\n");
-            }
-
-            return toolsInfo.toString();
-        } catch (Exception e) {
-            log.error("获取执行器实际 MCP 工具信息失败，clientId={}", executorClientId, e);
-            return "获取执行器 MCP 工具清单失败，clientId=" + executorClientId
-                    + "，原因：" + e.getMessage() + "。\n";
-        }
     }
 
     @Override
