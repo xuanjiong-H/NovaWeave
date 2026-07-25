@@ -6,6 +6,7 @@ import cn.bugstack.ai.domain.agent.model.valobj.AiClientSystemPromptVO;
 import cn.bugstack.ai.domain.agent.model.valobj.AiClientVO;
 import cn.bugstack.ai.domain.agent.service.armory.node.factory.DefaultArmoryStrategyFactory;
 import cn.bugstack.ai.domain.agent.service.tool.ToolExecutionTrace;
+import cn.bugstack.ai.domain.agent.service.tool.ToolInvocationPolicyContext;
 import cn.bugstack.wrench.design.framework.tree.StrategyHandler;
 import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONObject;
@@ -126,14 +127,12 @@ public class AiClientNode extends AbstractArmorySupport {
 
             @Override
             public String call(String toolInput) {
-                String normalizedInput = normalizeToolInput(delegate, toolInput);
-                return invokeTool(delegate, () -> delegate.call(normalizedInput));
+                return invokeTool(delegate, () -> delegate.call(normalizeToolInput(delegate, toolInput)));
             }
 
             @Override
             public String call(String toolInput, ToolContext toolContext) {
-                String normalizedInput = normalizeToolInput(delegate, toolInput);
-                return invokeTool(delegate, () -> delegate.call(normalizedInput, toolContext));
+                return invokeTool(delegate, () -> delegate.call(normalizeToolInput(delegate, toolInput), toolContext));
             }
         };
     }
@@ -237,6 +236,18 @@ public class AiClientNode extends AbstractArmorySupport {
 
     private String invokeTool(ToolCallback delegate, Supplier<String> invocation) {
         String toolName = delegate.getToolDefinition().name();
+        ToolInvocationPolicyContext.Decision policyDecision = ToolInvocationPolicyContext.authorize(toolName);
+        if (!policyDecision.permitted()) {
+            String message = policyDecision.rejectionReason();
+            ToolExecutionTrace.recordFailure(toolName, message, 0);
+            log.warn("MCP工具调用被阶段策略拒绝: toolName={}, reason={}", toolName, message);
+            return JSON.toJSONString(Map.of(
+                    "success", false,
+                    "error", "SUPERVISOR_TOOL_POLICY_REJECTED",
+                    "message", message,
+                    "toolName", toolName
+            ));
+        }
         long startedAt = System.nanoTime();
         try {
             String output = invocation.get();

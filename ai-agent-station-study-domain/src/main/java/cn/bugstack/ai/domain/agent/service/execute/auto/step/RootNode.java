@@ -27,7 +27,10 @@ public class RootNode extends AbstractExecuteSupport {
     protected String doApply(ExecuteCommandEntity requestParameter, DefaultAutoAgentExecuteStrategyFactory.DynamicContext dynamicContext) throws Exception {
         log.info("=== 动态多轮执行测试开始 ====");
         log.info("用户输入: {}", requestParameter.getMessage());
-        log.info("最大执行步数: {}", requestParameter.getMaxStep());
+        int maxRounds = requestParameter.getMaxStep() != null && requestParameter.getMaxStep() > 0
+                ? requestParameter.getMaxStep()
+                : 1;
+        log.info("最大执行轮数: {}", maxRounds);
         log.info("会话ID: {}", requestParameter.getSessionId());
 
         Map<String, AiAgentClientFlowConfigVO> aiAgentClientFlowConfigVOMap = repository.queryAiAgentClientFlowConfig(requestParameter.getAiAgentId());
@@ -38,8 +41,10 @@ public class RootNode extends AbstractExecuteSupport {
         dynamicContext.setExecutionHistory(new StringBuilder());
         // 当前任务信息
         dynamicContext.setCurrentTask(requestParameter.getMessage());
-        // 最大任务步骤
-        dynamicContext.setMaxStep(requestParameter.getMaxStep());
+        // 最大执行轮数
+        dynamicContext.setMaxStep(maxRounds);
+        dynamicContext.setCompletedRounds(0);
+        dynamicContext.setMaxRoundsReached(false);
 
         return router(requestParameter, dynamicContext);
     }

@@ -4,6 +4,7 @@ import cn.bugstack.ai.domain.agent.model.entity.AutoAgentExecuteResultEntity;
 import cn.bugstack.ai.domain.agent.model.entity.ExecuteCommandEntity;
 import cn.bugstack.ai.domain.agent.model.valobj.AiAgentClientFlowConfigVO;
 import cn.bugstack.ai.domain.agent.model.valobj.enums.AiClientTypeEnumVO;
+import cn.bugstack.ai.domain.agent.service.execute.auto.parser.FinalSummaryFormatter;
 import cn.bugstack.ai.domain.agent.service.execute.auto.step.factory.DefaultAutoAgentExecuteStrategyFactory;
 import cn.bugstack.ai.domain.agent.service.sse.SseConnectionClosedException;
 import cn.bugstack.wrench.design.framework.tree.StrategyHandler;
@@ -23,13 +24,10 @@ public class Step4LogExecutionSummaryNode extends AbstractExecuteSupport {
 
     @Override
     protected String doApply(ExecuteCommandEntity requestParameter, DefaultAutoAgentExecuteStrategyFactory.DynamicContext dynamicContext) throws Exception {
-        log.info("\n📊 === 执行第 {} 步 ===", dynamicContext.getStep());
-
-        // 第四阶段：执行总结
-        log.info("\n📊 阶段4: 执行总结分析");
+        log.info("\n📊 === 生成执行总结 ===");
         
         // 记录执行总结
-        logExecutionSummary(dynamicContext.getMaxStep(), dynamicContext.getExecutionHistory(), dynamicContext.isCompleted());
+        logExecutionSummary(dynamicContext.getMaxStep(), dynamicContext.getCompletedRounds(), dynamicContext.isCompleted());
         
         // 生成最终总结报告（无论任务是否完成都需要生成）
         generateFinalReport(requestParameter, dynamicContext);
@@ -48,21 +46,19 @@ public class Step4LogExecutionSummaryNode extends AbstractExecuteSupport {
     /**
      * 记录执行总结
      */
-    private void logExecutionSummary(int maxSteps, StringBuilder executionHistory, boolean isCompleted) {
+    private void logExecutionSummary(int maxRounds, int completedRounds, boolean isCompleted) {
         log.info("\n📊 === 动态多轮执行总结 ====");
-        
-        int actualSteps = Math.min(maxSteps, executionHistory.toString().split("=== 第").length - 1);
-        log.info("📈 总执行步数: {} 步", actualSteps);
+
+        log.info("📈 实际执行轮数: {} 轮", completedRounds);
         
         if (isCompleted) {
             log.info("✅ 任务完成状态: 已完成");
         } else {
-            log.info("⏸️ 任务完成状态: 未完成（达到最大步数限制）");
+            log.info("⏸️ 任务完成状态: 未完成（达到最大执行轮数）");
         }
-        
-        // 计算执行效率
-        double efficiency = isCompleted ? 100.0 : (double) actualSteps / maxSteps * 100;
-        log.info("📊 执行效率: {}%", efficiency);
+
+        double roundUsage = maxRounds > 0 ? (double) completedRounds / maxRounds * 100 : 0;
+        log.info("📊 执行轮次使用率: {}%", Math.min(roundUsage, 100.0));
     }
     
     /**
@@ -88,10 +84,16 @@ public class Step4LogExecutionSummaryNode extends AbstractExecuteSupport {
                     .call().content();
 
             assert summaryResult != null;
-            logFinalReport(dynamicContext, summaryResult, requestParameter.getSessionId());
+            String finalSummary = FinalSummaryFormatter.appendMaxRoundsNotice(
+                    summaryResult,
+                    dynamicContext.getMaxStep(),
+                    dynamicContext.isCompleted(),
+                    dynamicContext.isMaxRoundsReached(),
+                    dynamicContext.getCurrentTask());
+            logFinalReport(dynamicContext, finalSummary, requestParameter.getSessionId());
             
             // 将总结结果保存到动态上下文中
-            dynamicContext.setValue("finalSummary", summaryResult);
+            dynamicContext.setValue("finalSummary", finalSummary);
             
         } catch (SseConnectionClosedException e) {
             throw e;
@@ -109,33 +111,21 @@ public class Step4LogExecutionSummaryNode extends AbstractExecuteSupport {
             }
         }
 
-        String summaryPrompt;
+        String summaryPrompt = String.format(aiAgentClientFlowConfigVO.getStepPrompt(),
+                requestParameter.getMessage(),
+                executionContext);
         if (isCompleted) {
-            summaryPrompt = String.format(aiAgentClientFlowConfigVO.getStepPrompt(),
-                    requestParameter.getMessage(),
-                    executionContext);
-        } else {
-            summaryPrompt = String.format("""
-                    虽然任务未完全执行完成，但请基于已有的执行过程，尽力回答用户的原始问题：
-                    
-                    **用户原始问题:** %s
-                    
-                    **已执行的过程和获得的信息:**
-                    %s
-                    
-                    **要求:**
-                    1. 基于已有信息，尽力回答用户的原始问题
-                    2. 如果信息不足，说明哪些部分无法完成并给出原因
-                    3. 提供已能确定的部分答案
-                    4. 给出完成剩余部分的具体建议
-                    5. 以MD语法的表格形式，优化展示结果数据
-                    
-                    请基于现有信息给出用户问题的答案：
-                    """,
-                    requestParameter.getMessage(),
-                    executionContext);
+            return summaryPrompt;
         }
-        return summaryPrompt;
+        return summaryPrompt + """
+
+                # 未完成任务总结约束
+                当前已达到最大执行轮数，但任务尚未完全完成。请在专业报告中：
+                1. 先给出已有数据能够支持的部分答案。
+                2. 明确区分已确认结果与未获取结果，不得补写或估算缺失数据。
+                3. 说明剩余事项及其未完成原因。
+                4. 不得将任务描述为已经完成。
+                """;
     }
 
     /**

@@ -38,11 +38,17 @@ public class DefaultAutoAgentExecuteStrategyFactory {
     @NoArgsConstructor
     public static class DynamicContext {
 
-        // 任务执行步骤
+        // 当前执行轮次
         private int step = 1;
 
-        // 最大任务步骤
+        // 最大执行轮数
         private int maxStep = 1;
+
+        // 已完整执行的轮数（分析、执行、监督均完成）
+        private int completedRounds = 0;
+
+        // 是否因达到最大轮数而结束
+        private boolean maxRoundsReached = false;
 
         private StringBuilder executionHistory;
 
