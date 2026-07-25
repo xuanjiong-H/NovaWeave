@@ -26,7 +26,7 @@ public class RootNode extends AbstractExecuteSupport {
     protected String doApply(ExecuteCommandEntity requestParameter, DefaultFlowAgentExecuteStrategyFactory.DynamicContext dynamicContext) throws Exception {
         log.info("=== 流程执行开始 ====");
         log.info("用户输入: {}", requestParameter.getMessage());
-        log.info("最大执行步数: {}", requestParameter.getMaxStep());
+        log.info("最大规划步骤数: {}", dynamicContext.getMaxPlanningSteps());
         log.info("会话ID: {}", requestParameter.getSessionId());
 
         Map<String, AiAgentClientFlowConfigVO> aiAgentClientFlowConfigVOMap = repository.queryAiAgentClientFlowConfig(requestParameter.getAiAgentId());
@@ -37,9 +37,6 @@ public class RootNode extends AbstractExecuteSupport {
         dynamicContext.setExecutionHistory(new StringBuilder());
         // 当前任务信息
         dynamicContext.setCurrentTask(requestParameter.getMessage());
-        // 最大任务步骤
-        dynamicContext.setMaxStep(requestParameter.getMaxStep());
-
         return router(requestParameter, dynamicContext);
     }
 

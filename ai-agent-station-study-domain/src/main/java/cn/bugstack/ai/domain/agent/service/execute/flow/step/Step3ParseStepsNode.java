@@ -2,16 +2,14 @@ package cn.bugstack.ai.domain.agent.service.execute.flow.step;
 
 import cn.bugstack.ai.domain.agent.model.entity.AutoAgentExecuteResultEntity;
 import cn.bugstack.ai.domain.agent.model.entity.ExecuteCommandEntity;
+import cn.bugstack.ai.domain.agent.service.execute.flow.parser.FlowExecutionPlanParser;
 import cn.bugstack.ai.domain.agent.service.execute.flow.step.factory.DefaultFlowAgentExecuteStrategyFactory;
 import cn.bugstack.wrench.design.framework.tree.StrategyHandler;
 import jakarta.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
-import java.util.HashMap;
 import java.util.Map;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 /**
  * 步骤3：规划步骤解析节点
@@ -32,19 +30,9 @@ public class Step3ParseStepsNode extends AbstractExecuteSupport {
         
         String planningResult = dynamicContext.getValue("planningResult");
         
-        if (planningResult == null || planningResult.trim().isEmpty()) {
-            log.warn("规划结果为空，无法解析步骤");
-            throw new RuntimeException("规划结果为空，无法解析步骤");
-        }
-        
-        Map<String, String> stepsMap = parseExecutionSteps(planningResult);
-
-        if (stepsMap.isEmpty()) {
-            log.error("规划结果未解析出步骤，planningResult={}", planningResult);
-            throw new IllegalStateException(
-                    "规划结果格式不符合要求，必须包含“### 第N步：步骤描述”"
-            );
-        }
+        FlowExecutionPlanParser.Result parsedPlan = FlowExecutionPlanParser.parse(planningResult);
+        FlowExecutionPlanParser.validateExecutable(parsedPlan, dynamicContext.getMaxPlanningSteps());
+        Map<String, String> stepsMap = parsedPlan.steps();
 
         log.info("成功解析 {} 个执行步骤", stepsMap.size());
         
@@ -64,74 +52,13 @@ public class Step3ParseStepsNode extends AbstractExecuteSupport {
         
         // 发送SSE结果
         AutoAgentExecuteResultEntity result = AutoAgentExecuteResultEntity.createAnalysisSubResult(
-                dynamicContext.getStep(), 
+                null,
                 "analysis_progress", 
                 parseResult.toString(), 
                 requestParameter.getSessionId());
         sendSseResult(dynamicContext, result);
         
-        // 更新步骤
-        dynamicContext.setStep(dynamicContext.getStep() + 1);
-        
         return router(requestParameter, dynamicContext);
-    }
-
-    /**
-     * 解析执行步骤
-     */
-    private Map<String, String> parseExecutionSteps(String planningResult) {
-        Map<String, String> stepsMap = new HashMap<>();
-
-        if (planningResult == null || planningResult.trim().isEmpty()) {
-            return stepsMap;
-        }
-
-        try {
-            // 使用正则表达式匹配步骤标题和详细内容
-            Pattern stepPattern = Pattern.compile("### (第\\d+步：[^\\n]+)([\\s\\S]*?)(?=### 第\\d+步：|$)");
-            Matcher matcher = stepPattern.matcher(planningResult);
-
-            while (matcher.find()) {
-                String stepTitle = matcher.group(1).trim();
-                String stepContent = matcher.group(2).trim();
-
-                // 提取步骤编号
-                Pattern numberPattern = Pattern.compile("第(\\d+)步：");
-                Matcher numberMatcher = numberPattern.matcher(stepTitle);
-
-                if (numberMatcher.find()) {
-                    String stepNumber = "第" + numberMatcher.group(1) + "步";
-                    String fullStepInfo = stepTitle + "\n" + stepContent;
-                    stepsMap.put(stepNumber, fullStepInfo);
-                    log.debug("解析步骤: {} -> {}", stepNumber, stepTitle);
-                }
-            }
-
-            // 如果没有匹配到详细步骤，尝试匹配简单的步骤列表
-            if (stepsMap.isEmpty()) {
-                Pattern simpleStepPattern = Pattern.compile("\\[ \\] (第\\d+步：[^\\n]+)");
-                Matcher simpleMatcher = simpleStepPattern.matcher(planningResult);
-
-                while (simpleMatcher.find()) {
-                    String stepTitle = simpleMatcher.group(1).trim();
-                    Pattern numberPattern = Pattern.compile("第(\\d+)步：");
-                    Matcher numberMatcher = numberPattern.matcher(stepTitle);
-
-                    if (numberMatcher.find()) {
-                        String stepNumber = "第" + numberMatcher.group(1) + "步";
-                        stepsMap.put(stepNumber, stepTitle);
-                        log.debug("解析简单步骤: {} -> {}", stepNumber, stepTitle);
-                    }
-                }
-            }
-
-            log.info("成功解析 {} 个执行步骤", stepsMap.size());
-
-        } catch (Exception e) {
-            log.error("解析规划结果时发生错误", e);
-        }
-
-        return stepsMap;
     }
 
     @Override

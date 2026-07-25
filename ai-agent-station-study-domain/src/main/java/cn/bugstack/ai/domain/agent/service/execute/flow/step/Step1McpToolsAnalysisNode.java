@@ -89,14 +89,11 @@ public class Step1McpToolsAnalysisNode extends AbstractExecuteSupport {
         
         // 发送SSE结果
         AutoAgentExecuteResultEntity result = AutoAgentExecuteResultEntity.createAnalysisSubResult(
-                dynamicContext.getStep(), 
+                null,
                 "analysis_tools", 
                 mcpToolsAnalysis, 
                 requestParameter.getSessionId());
         sendSseResult(dynamicContext, result);
-        
-        // 更新步骤
-        dynamicContext.setStep(dynamicContext.getStep() + 1);
         
         return router(requestParameter, dynamicContext);
     }

@@ -102,7 +102,7 @@ public class FlowAgentExecuteTest {
 
         // 创建动态上下文
         DefaultFlowAgentExecuteStrategyFactory.DynamicContext dynamicContext = new DefaultFlowAgentExecuteStrategyFactory.DynamicContext();
-        dynamicContext.setMaxStep(executeCommandEntity.getMaxStep());
+        dynamicContext.setMaxPlanningSteps(executeCommandEntity.getMaxStep());
         dynamicContext.setExecutionHistory(new StringBuilder());
         dynamicContext.setCurrentTask(executeCommandEntity.getMessage());
 

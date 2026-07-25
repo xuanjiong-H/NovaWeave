@@ -35,18 +35,15 @@ public class Step4ExecuteStepsNode extends AbstractExecuteSupport {
         log.info("开始执行第四步：按顺序执行规划步骤");
         
         try {
+            // 在获取执行器或调用任何业务工具前，再次确认规划步骤未超限
+            Map<String, String> stepsMap = dynamicContext.getValue("stepsMap");
+            validateStepsBeforeExecution(stepsMap, dynamicContext.getMaxPlanningSteps());
+
             // 获取配置信息
             AiAgentClientFlowConfigVO aiAgentClientFlowConfigVO = dynamicContext.getAiAgentClientFlowConfigVOMap().get(AiClientTypeEnumVO.EXECUTOR_CLIENT.getCode());
 
             // 获取规划客户端
             ChatClient executorChatClient = getChatClientByClientId(aiAgentClientFlowConfigVO.getClientId());
-
-            // 从动态上下文获取解析的步骤
-            Map<String, String> stepsMap = dynamicContext.getValue("stepsMap");
-            
-            if (stepsMap == null || stepsMap.isEmpty()) {
-                return "步骤映射为空，无法执行";
-            }
             
             // 按顺序执行规划步骤
             executeStepsInOrder(executorChatClient, stepsMap, dynamicContext);
@@ -60,7 +57,7 @@ public class Step4ExecuteStepsNode extends AbstractExecuteSupport {
 
             // 发送SSE结果
             AutoAgentExecuteResultEntity result = AutoAgentExecuteResultEntity.createExecutionResult(
-                    dynamicContext.getStep(),
+                    null,
                     "已完成所有规划步骤的执行",
                     request.getSessionId()
             );
@@ -69,8 +66,6 @@ public class Step4ExecuteStepsNode extends AbstractExecuteSupport {
             // 发送总结结果到【最终执行结果】区域
             sendSummaryResult(dynamicContext, request.getSessionId());
             
-            // 更新步骤
-            dynamicContext.setStep(dynamicContext.getStep() + 1);
             dynamicContext.setCompleted(true);
             
             log.info("第四步执行完成：所有规划步骤已执行");
@@ -376,6 +371,18 @@ public class Step4ExecuteStepsNode extends AbstractExecuteSupport {
                 executionHistory.append("- 错误信息：").append(errorMessage).append("\n");
             }
             executionHistory.append('\n');
+        }
+    }
+
+    static void validateStepsBeforeExecution(Map<String, String> stepsMap, int maxPlanningSteps) {
+        if (stepsMap == null || stepsMap.isEmpty()) {
+            throw new IllegalStateException("步骤映射为空，无法执行");
+        }
+        if (stepsMap.size() > maxPlanningSteps) {
+            throw new IllegalStateException(
+                    "规划包含 " + stepsMap.size() + " 个业务步骤，超过最大规划步骤数 "
+                            + maxPlanningSteps + "，已在执行任何业务步骤前终止"
+            );
         }
     }
 

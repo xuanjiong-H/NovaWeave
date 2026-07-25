@@ -21,6 +21,10 @@ import org.springframework.web.servlet.mvc.method.annotation.ResponseBodyEmitter
 @Service("flowAgentExecuteStrategy")
 public class FlowAgentExecuteStrategy implements IExecuteStrategy {
 
+    static final int DEFAULT_MAX_PLANNING_STEPS = 5;
+    static final int MIN_MAX_PLANNING_STEPS = 1;
+    static final int MAX_MAX_PLANNING_STEPS = 10;
+
     @Resource
     private DefaultFlowAgentExecuteStrategyFactory defaultFlowAgentExecuteStrategyFactory;
 
@@ -31,13 +35,13 @@ public class FlowAgentExecuteStrategy implements IExecuteStrategy {
         
         // 创建动态上下文并初始化必要字段
         DefaultFlowAgentExecuteStrategyFactory.DynamicContext dynamicContext = new DefaultFlowAgentExecuteStrategyFactory.DynamicContext();
-        dynamicContext.setMaxStep(executeCommandEntity.getMaxStep() != null ? executeCommandEntity.getMaxStep() : 4);
         dynamicContext.setExecutionHistory(new StringBuilder());
         dynamicContext.setCurrentTask(executeCommandEntity.getMessage());
         dynamicContext.setValue("emitter", emitter);
         dynamicContext.setValue("sessionId", executeCommandEntity.getSessionId());
 
         try {
+            dynamicContext.setMaxPlanningSteps(resolveMaxPlanningSteps(executeCommandEntity.getMaxStep()));
             String apply = executeHandler.apply(executeCommandEntity, dynamicContext);
             log.info("流程执行结果:{}", apply);
 
@@ -60,6 +64,19 @@ public class FlowAgentExecuteStrategy implements IExecuteStrategy {
 
             SseEmitterSupport.send(emitter, errorResult);
         }
+    }
+
+    public static int resolveMaxPlanningSteps(Integer requestedMaxStep) {
+        int maxPlanningSteps = requestedMaxStep == null
+                ? DEFAULT_MAX_PLANNING_STEPS
+                : requestedMaxStep;
+        if (maxPlanningSteps < MIN_MAX_PLANNING_STEPS || maxPlanningSteps > MAX_MAX_PLANNING_STEPS) {
+            throw new IllegalArgumentException(
+                    "Flow 最大规划步骤数必须在 " + MIN_MAX_PLANNING_STEPS
+                            + " 到 " + MAX_MAX_PLANNING_STEPS + " 之间"
+            );
+        }
+        return maxPlanningSteps;
     }
 
 }

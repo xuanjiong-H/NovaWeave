@@ -38,11 +38,8 @@ public class DefaultFlowAgentExecuteStrategyFactory {
     @NoArgsConstructor
     public static class DynamicContext {
 
-        // 任务执行步骤
-        private int step = 1;
-
-        // 最大任务步骤
-        private int maxStep = 4;
+        // Flow 业务计划允许包含的最大步骤数，由执行策略入口统一解析后写入
+        private int maxPlanningSteps;
 
         private StringBuilder executionHistory;
 
