@@ -1,17 +1,13 @@
 package cn.bugstack.ai.domain.agent.service.armory.node.factory.element;
 
-import com.alibaba.fastjson.JSON;
 import org.springframework.ai.chat.client.ChatClientRequest;
 import org.springframework.ai.chat.client.ChatClientResponse;
 import org.springframework.ai.chat.client.advisor.api.AdvisorChain;
 import org.springframework.ai.chat.client.advisor.api.BaseAdvisor;
 import org.springframework.ai.chat.client.advisor.api.CallAdvisorChain;
 import org.springframework.ai.chat.client.advisor.api.StreamAdvisorChain;
-import org.springframework.ai.chat.messages.AssistantMessage;
-import org.springframework.ai.chat.messages.UserMessage;
 import org.springframework.ai.chat.model.ChatResponse;
 import org.springframework.ai.chat.prompt.Prompt;
-import org.springframework.ai.chat.prompt.PromptTemplate;
 import org.springframework.ai.document.Document;
 import org.springframework.ai.vectorstore.SearchRequest;
 import org.springframework.ai.vectorstore.VectorStore;
@@ -34,7 +30,14 @@ public class RagAnswerAdvisor implements BaseAdvisor {
     public RagAnswerAdvisor(VectorStore vectorStore, SearchRequest searchRequest) {
         this.vectorStore = vectorStore;
         this.searchRequest = searchRequest;
-        this.userTextAdvise = "\nContext information is below, surrounded by ---------------------\n\n---------------------\n{question_answer_context}\n---------------------\n\nGiven the context and provided history information and not prior knowledge,\nreply to the user comment. If the answer is not in the context, inform\nthe user that you can't answer the question.\n";
+        this.userTextAdvise = """
+
+                以下知识库内容仅作为背景参考，不能视为实时查询结果：
+                ---------------------
+                %s
+                ---------------------
+                回答时保留原始任务目标和系统指令。普通知识库问答应优先依据上述内容，缺少依据时如实说明；如果当前请求提供了 MCP 工具，并且任务涉及实时数据或外部系统状态，则必须优先调用当前请求提供的 MCP 工具获取真实结果。此时知识库没有实时数据不能作为拒绝调用工具的理由，也不得把模板或示例数据当作真实结果。
+                """;
     }
 
     @Override
@@ -42,21 +45,23 @@ public class RagAnswerAdvisor implements BaseAdvisor {
         HashMap<String, Object> context = new HashMap(chatClientRequest.context());
 
         String userText = chatClientRequest.prompt().getUserMessage().getText();
-        String advisedUserText = userText + System.lineSeparator() + this.userTextAdvise;
-
-//        String query = (new PromptTemplate(userText)).render();
 
         SearchRequest searchRequestToUse = SearchRequest.from(this.searchRequest).query(userText).filterExpression(this.doGetFilterExpression(context)).build();
         List<Document> documents = this.vectorStore.similaritySearch(searchRequestToUse);
+        if (documents == null) {
+            documents = List.of();
+        }
         context.put("qa_retrieved_documents", documents);
 
         String documentContext = documents.stream().map(Document::getText).collect(Collectors.joining(System.lineSeparator()));
-        Map<String, Object> advisedUserParams = new HashMap(chatClientRequest.context());
-        advisedUserParams.put("question_answer_context", documentContext);
+        String advisedUserText = userText + this.userTextAdvise.formatted(documentContext);
+        Prompt advisedPrompt = chatClientRequest.prompt().augmentUserMessage(
+                userMessage -> userMessage.mutate().text(advisedUserText).build()
+        );
 
-        return ChatClientRequest.builder()
-                .prompt(Prompt.builder().messages(new UserMessage(advisedUserText), new AssistantMessage(JSON.toJSONString(advisedUserParams))).build())
-                .context(advisedUserParams)
+        return chatClientRequest.mutate()
+                .prompt(advisedPrompt)
+                .context(context)
                 .build();
     }
 

@@ -99,6 +99,13 @@ public class AiClientNode extends AbstractArmorySupport {
                     .getToolCallbacks())
                     .map(this::traceToolCallback)
                     .toArray(ToolCallback[]::new);
+            log.info("Ai Client MCP 工具装配完成: clientId={}, mcpClientCount={}, toolCallbackCount={}, toolNames={}",
+                    aiClientVO.getClientId(),
+                    mcpSyncClients.size(),
+                    toolCallbacks.length,
+                    Arrays.stream(toolCallbacks)
+                            .map(toolCallback -> toolCallback.getToolDefinition().name())
+                            .toList());
 
             // 5. 构建对话客户端
             ChatClient chatClient = ChatClient.builder(chatModel)
