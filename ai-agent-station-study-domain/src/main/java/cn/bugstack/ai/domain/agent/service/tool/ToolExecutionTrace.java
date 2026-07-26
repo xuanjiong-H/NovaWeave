@@ -19,17 +19,17 @@ public final class ToolExecutionTrace {
         CURRENT.set(new ArrayList<>());
     }
 
-    public static void recordSuccess(String toolName, String output, long durationMillis) {
+    public static void recordSuccess(String toolName, String input, String output, long durationMillis) {
         List<ToolExecutionRecord> records = CURRENT.get();
         if (records != null) {
-            records.add(new ToolExecutionRecord(toolName, output, null, durationMillis));
+            records.add(new ToolExecutionRecord(toolName, input, output, null, durationMillis));
         }
     }
 
-    public static void recordFailure(String toolName, String errorMessage, long durationMillis) {
+    public static void recordFailure(String toolName, String input, String errorMessage, long durationMillis) {
         List<ToolExecutionRecord> records = CURRENT.get();
         if (records != null) {
-            records.add(new ToolExecutionRecord(toolName, null, errorMessage, durationMillis));
+            records.add(new ToolExecutionRecord(toolName, input, null, errorMessage, durationMillis));
         }
     }
 
@@ -42,7 +42,7 @@ public final class ToolExecutionTrace {
         CURRENT.remove();
     }
 
-    public record ToolExecutionRecord(String toolName, String output, String errorMessage, long durationMillis) {
+    public record ToolExecutionRecord(String toolName, String input, String output, String errorMessage, long durationMillis) {
 
         public boolean succeeded() {
             return errorMessage == null;

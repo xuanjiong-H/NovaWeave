@@ -259,7 +259,10 @@ irate(node_network_transmit_bytes_total{device!="lo"}[5m]) * 8
    grafana/query_prometheus
    query: node_cpu_seconds_total
    ```
-   实时查询省略 `start` 和 `end`，以 Prometheus 查询时刻为准。只有查询历史趋势时才传入 RFC3339 格式的绝对时间。
+   当前 `query_prometheus` Schema 要求即时查询传入 `startTime`。查询最近窗口汇总时使用
+   `queryType="instant"`、`startTime="now"`，并在 PromQL 中使用 `[24h]` 等回看窗口；不要使用
+   `startTime="now-24h"` 表示最近 24 小时。只有查询历史趋势时才使用 `queryType="range"`，传入
+   `startTime="now-24h"`、`endTime="now"` 和 `stepSeconds`。
 
 ## 最佳实践
 

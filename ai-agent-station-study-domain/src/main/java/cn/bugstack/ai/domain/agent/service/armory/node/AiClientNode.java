@@ -134,12 +134,14 @@ public class AiClientNode extends AbstractArmorySupport {
 
             @Override
             public String call(String toolInput) {
-                return invokeTool(delegate, () -> delegate.call(normalizeToolInput(delegate, toolInput)));
+                String normalizedInput = normalizeToolInput(delegate, toolInput);
+                return invokeTool(delegate, normalizedInput, () -> delegate.call(normalizedInput));
             }
 
             @Override
             public String call(String toolInput, ToolContext toolContext) {
-                return invokeTool(delegate, () -> delegate.call(normalizeToolInput(delegate, toolInput), toolContext));
+                String normalizedInput = normalizeToolInput(delegate, toolInput);
+                return invokeTool(delegate, normalizedInput, () -> delegate.call(normalizedInput, toolContext));
             }
         };
     }
@@ -241,12 +243,12 @@ public class AiClientNode extends AbstractArmorySupport {
         return matcher.matches() ? matcher.group(1).trim() : content;
     }
 
-    private String invokeTool(ToolCallback delegate, Supplier<String> invocation) {
+    private String invokeTool(ToolCallback delegate, String toolInput, Supplier<String> invocation) {
         String toolName = delegate.getToolDefinition().name();
         ToolInvocationPolicyContext.Decision policyDecision = ToolInvocationPolicyContext.authorize(toolName);
         if (!policyDecision.permitted()) {
             String message = policyDecision.rejectionReason();
-            ToolExecutionTrace.recordFailure(toolName, message, 0);
+            ToolExecutionTrace.recordFailure(toolName, toolInput, message, 0);
             log.warn("MCP工具调用被阶段策略拒绝: toolName={}, reason={}", toolName, message);
             return JSON.toJSONString(Map.of(
                     "success", false,
@@ -259,12 +261,12 @@ public class AiClientNode extends AbstractArmorySupport {
         try {
             String output = invocation.get();
             long durationMillis = (System.nanoTime() - startedAt) / 1_000_000;
-            ToolExecutionTrace.recordSuccess(toolName, output, durationMillis);
+            ToolExecutionTrace.recordSuccess(toolName, toolInput, output, durationMillis);
             log.info("MCP工具调用完成: toolName={}, duration={}ms", toolName, durationMillis);
             return output;
         } catch (RuntimeException e) {
             long durationMillis = (System.nanoTime() - startedAt) / 1_000_000;
-            ToolExecutionTrace.recordFailure(toolName, e.getMessage(), durationMillis);
+            ToolExecutionTrace.recordFailure(toolName, toolInput, e.getMessage(), durationMillis);
             log.error("MCP工具调用失败: toolName={}, duration={}ms", toolName, durationMillis, e);
             throw e;
         }

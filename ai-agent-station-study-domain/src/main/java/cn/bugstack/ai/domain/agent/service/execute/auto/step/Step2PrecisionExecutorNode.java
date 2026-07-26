@@ -6,6 +6,7 @@ import cn.bugstack.ai.domain.agent.model.valobj.AiAgentClientFlowConfigVO;
 import cn.bugstack.ai.domain.agent.model.valobj.AiClientVO;
 import cn.bugstack.ai.domain.agent.model.valobj.enums.AiClientTypeEnumVO;
 import cn.bugstack.ai.domain.agent.service.execute.auto.parser.StageOutputParser;
+import cn.bugstack.ai.domain.agent.service.execute.auto.policy.AutoAgentMonitoringPolicy;
 import cn.bugstack.ai.domain.agent.service.execute.auto.step.factory.DefaultAutoAgentExecuteStrategyFactory;
 import cn.bugstack.ai.domain.agent.service.tool.ToolExecutionTrace;
 import cn.bugstack.ai.domain.agent.service.tool.ToolExecutionTrace.ToolExecutionRecord;
@@ -57,6 +58,11 @@ public class Step2PrecisionExecutorNode extends AbstractExecuteSupport{
         AiAgentClientFlowConfigVO aiAgentClientFlowConfigVO = dynamicContext.getAiAgentClientFlowConfigVOMap().get(AiClientTypeEnumVO.PRECISION_EXECUTOR_CLIENT.getCode());
 
         String executionPrompt = String.format(aiAgentClientFlowConfigVO.getStepPrompt(), requestParameter.getMessage(), analysisResult);
+        executionPrompt = AutoAgentMonitoringPolicy.append(
+                requestParameter.getAiAgentId(),
+                AutoAgentMonitoringPolicy.Stage.EXECUTOR,
+                executionPrompt
+        );
 
         // 获取对话客户端
         ChatClient chatClient = getChatClientByClientId(aiAgentClientFlowConfigVO.getClientId());

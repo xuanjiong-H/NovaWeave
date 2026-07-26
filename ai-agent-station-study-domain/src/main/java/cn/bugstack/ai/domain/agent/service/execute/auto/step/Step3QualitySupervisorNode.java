@@ -7,13 +7,16 @@ import cn.bugstack.ai.domain.agent.model.valobj.enums.AiClientTypeEnumVO;
 import cn.bugstack.ai.domain.agent.model.valobj.enums.QualityDecisionEnumVO;
 import cn.bugstack.ai.domain.agent.service.execute.auto.parser.QualityDecisionParser;
 import cn.bugstack.ai.domain.agent.service.execute.auto.parser.StageOutputParser;
+import cn.bugstack.ai.domain.agent.service.execute.auto.policy.AutoAgentMonitoringPolicy;
 import cn.bugstack.ai.domain.agent.service.execute.auto.step.factory.DefaultAutoAgentExecuteStrategyFactory;
+import cn.bugstack.ai.domain.agent.service.tool.ToolExecutionTrace.ToolExecutionRecord;
 import cn.bugstack.ai.domain.agent.service.tool.ToolInvocationPolicyContext;
 import cn.bugstack.wrench.design.framework.tree.StrategyHandler;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.ai.chat.client.ChatClient;
 import org.springframework.stereotype.Service;
 
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -59,6 +62,13 @@ public class Step3QualitySupervisorNode extends AbstractExecuteSupport {
         AiAgentClientFlowConfigVO aiAgentClientFlowConfigVO = dynamicContext.getAiAgentClientFlowConfigVOMap().get(AiClientTypeEnumVO.QUALITY_SUPERVISOR_CLIENT.getCode());
         
         String supervisionPrompt = String.format(aiAgentClientFlowConfigVO.getStepPrompt(), requestParameter.getMessage(), executionResult);
+        List<ToolExecutionRecord> executionToolRecords = dynamicContext.getValue("executionToolRecords");
+        supervisionPrompt += formatToolTrace(executionToolRecords);
+        supervisionPrompt = AutoAgentMonitoringPolicy.append(
+                requestParameter.getAiAgentId(),
+                AutoAgentMonitoringPolicy.Stage.SUPERVISOR,
+                supervisionPrompt
+        );
 
         // 获取对话客户端
         ChatClient chatClient = getChatClientByClientId(aiAgentClientFlowConfigVO.getClientId());
@@ -129,6 +139,27 @@ public class Step3QualitySupervisorNode extends AbstractExecuteSupport {
         }
 
         return router(requestParameter, dynamicContext);
+    }
+
+    private static String formatToolTrace(List<ToolExecutionRecord> records) {
+        if (records == null || records.isEmpty()) {
+            return "\n\n# Actual MCP calls in this round\nNo MCP calls were recorded.";
+        }
+
+        StringBuilder trace = new StringBuilder("\n\n# Actual MCP calls in this round\n");
+        for (ToolExecutionRecord record : records) {
+            trace.append("- tool=").append(record.toolName())
+                    .append(", succeeded=").append(record.succeeded())
+                    .append(", durationMs=").append(record.durationMillis())
+                    .append(", input=").append(record.input());
+            if (!record.succeeded()) {
+                trace.append(", error=").append(record.errorMessage());
+            }
+            trace.append('\n');
+        }
+        trace.append("Use these actual inputs to validate queryType, time parameters, PromQL, and filters. ")
+                .append("Do not rely only on the executor's prose description.");
+        return trace.toString();
     }
 
     @Override

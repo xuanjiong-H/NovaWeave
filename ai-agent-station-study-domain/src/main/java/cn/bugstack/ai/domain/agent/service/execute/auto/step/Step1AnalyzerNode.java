@@ -5,6 +5,7 @@ import cn.bugstack.ai.domain.agent.model.entity.ExecuteCommandEntity;
 import cn.bugstack.ai.domain.agent.model.valobj.AiAgentClientFlowConfigVO;
 import cn.bugstack.ai.domain.agent.model.valobj.enums.AiClientTypeEnumVO;
 import cn.bugstack.ai.domain.agent.service.execute.auto.parser.StageOutputParser;
+import cn.bugstack.ai.domain.agent.service.execute.auto.policy.AutoAgentMonitoringPolicy;
 import cn.bugstack.ai.domain.agent.service.execute.auto.step.factory.DefaultAutoAgentExecuteStrategyFactory;
 import cn.bugstack.ai.domain.agent.service.tool.McpToolCatalogService;
 import cn.bugstack.wrench.design.framework.tree.StrategyHandler;
@@ -69,6 +70,11 @@ public class Step1AnalyzerNode extends AbstractExecuteSupport {
                 以下内容仅用于制定计划，不代表工具已经执行。只能规划清单中真实存在的工具和参数。
                 %s
                 """.formatted(toolCatalog);
+        analysisPrompt = AutoAgentMonitoringPolicy.append(
+                requestParameter.getAiAgentId(),
+                AutoAgentMonitoringPolicy.Stage.ANALYZER,
+                analysisPrompt
+        );
 
         ChatClient chatClient = getChatClientByClientId(aiAgentClientFlowConfigVO.getClientId());
 

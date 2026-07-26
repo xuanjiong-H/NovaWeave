@@ -5,6 +5,7 @@ import cn.bugstack.ai.domain.agent.model.entity.ExecuteCommandEntity;
 import cn.bugstack.ai.domain.agent.model.valobj.AiAgentClientFlowConfigVO;
 import cn.bugstack.ai.domain.agent.model.valobj.enums.AiClientTypeEnumVO;
 import cn.bugstack.ai.domain.agent.service.execute.auto.parser.FinalSummaryFormatter;
+import cn.bugstack.ai.domain.agent.service.execute.auto.policy.AutoAgentMonitoringPolicy;
 import cn.bugstack.ai.domain.agent.service.execute.auto.step.factory.DefaultAutoAgentExecuteStrategyFactory;
 import cn.bugstack.ai.domain.agent.service.sse.SseConnectionClosedException;
 import cn.bugstack.wrench.design.framework.tree.StrategyHandler;
@@ -114,6 +115,11 @@ public class Step4LogExecutionSummaryNode extends AbstractExecuteSupport {
         String summaryPrompt = String.format(aiAgentClientFlowConfigVO.getStepPrompt(),
                 requestParameter.getMessage(),
                 executionContext);
+        summaryPrompt = AutoAgentMonitoringPolicy.append(
+                requestParameter.getAiAgentId(),
+                AutoAgentMonitoringPolicy.Stage.SUMMARY,
+                summaryPrompt
+        );
         if (isCompleted) {
             return summaryPrompt;
         }
