@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
-<mapper namespace="cn.moonice.infrastructure.dao.IAiClientConfigDao">
+<mapper namespace="cn.bugstack.ai.infrastructure.dao.IAiClientConfigDao">
 
-    <resultMap id="AiClientConfigMap" type="cn.moonice.infrastructure.dao.po.AiClientConfig">
+    <resultMap id="AiClientConfigMap" type="cn.bugstack.ai.infrastructure.dao.po.AiClientConfig">
         <id column="id" property="id"/>
         <result column="source_type" property="sourceType"/>
         <result column="source_id" property="sourceId"/>
@@ -14,7 +14,7 @@
         <result column="update_time" property="updateTime"/>
     </resultMap>
 
-    <insert id="insert" parameterType="cn.moonice.infrastructure.dao.po.AiClientConfig" useGeneratedKeys="true" keyProperty="id">
+    <insert id="insert" parameterType="cn.bugstack.ai.infrastructure.dao.po.AiClientConfig" useGeneratedKeys="true" keyProperty="id">
         INSERT INTO ai_client_config (
             source_type, source_id, target_type, target_id, ext_param, status, create_time, update_time
         ) VALUES (
@@ -22,7 +22,7 @@
         )
     </insert>
 
-    <update id="updateById" parameterType="cn.moonice.infrastructure.dao.po.AiClientConfig">
+    <update id="updateById" parameterType="cn.bugstack.ai.infrastructure.dao.po.AiClientConfig">
         UPDATE ai_client_config SET
             source_type = #{sourceType},
             source_id = #{sourceId},
@@ -34,7 +34,7 @@
         WHERE id = #{id}
     </update>
 
-    <update id="updateBySourceId" parameterType="cn.moonice.infrastructure.dao.po.AiClientConfig">
+    <update id="updateBySourceId" parameterType="cn.bugstack.ai.infrastructure.dao.po.AiClientConfig">
         UPDATE ai_client_config SET
             source_type = #{sourceType},
             target_type = #{targetType},
@@ -86,9 +86,9 @@
     <select id="queryByConditions" resultMap="AiClientConfigMap">
         SELECT id, source_type, source_id, target_type, target_id, ext_param, status, create_time, update_time
         FROM ai_client_config
-        WHERE source_type = #{sourceType}
+        WHERE source_type = #{sourceType} 
           AND source_id = #{sourceId}
-          AND target_type = #{targetType}
+          AND target_type = #{targetType} 
           AND target_id = #{targetId}
     </select>
 

@@ -1,0 +1,82 @@
+package cn.bugstack.ai.domain.agent.service.execute.flow;
+
+import cn.bugstack.ai.domain.agent.model.entity.AutoAgentExecuteResultEntity;
+import cn.bugstack.ai.domain.agent.model.entity.ExecuteCommandEntity;
+import cn.bugstack.ai.domain.agent.service.IExecuteStrategy;
+import cn.bugstack.ai.domain.agent.service.execute.flow.step.factory.DefaultFlowAgentExecuteStrategyFactory;
+import cn.bugstack.ai.domain.agent.service.sse.SseConnectionClosedException;
+import cn.bugstack.ai.domain.agent.service.sse.SseEmitterSupport;
+import cn.bugstack.wrench.design.framework.tree.StrategyHandler;
+import jakarta.annotation.Resource;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.stereotype.Service;
+import org.springframework.web.servlet.mvc.method.annotation.ResponseBodyEmitter;
+
+/**
+ * 流程执行策略
+ * @author xiaofuge bugstack.cn @小傅哥
+ * 2025/8/5 09:56
+ */
+@Slf4j
+@Service("flowAgentExecuteStrategy")
+public class FlowAgentExecuteStrategy implements IExecuteStrategy {
+
+    static final int DEFAULT_MAX_PLANNING_STEPS = 5;
+    static final int MIN_MAX_PLANNING_STEPS = 1;
+    static final int MAX_MAX_PLANNING_STEPS = 10;
+
+    @Resource
+    private DefaultFlowAgentExecuteStrategyFactory defaultFlowAgentExecuteStrategyFactory;
+
+    @Override
+    public void execute(ExecuteCommandEntity executeCommandEntity, ResponseBodyEmitter emitter) throws Exception {
+        StrategyHandler<ExecuteCommandEntity, DefaultFlowAgentExecuteStrategyFactory.DynamicContext, String> executeHandler
+                = defaultFlowAgentExecuteStrategyFactory.armoryStrategyHandler();
+        
+        // 创建动态上下文并初始化必要字段
+        DefaultFlowAgentExecuteStrategyFactory.DynamicContext dynamicContext = new DefaultFlowAgentExecuteStrategyFactory.DynamicContext();
+        dynamicContext.setExecutionHistory(new StringBuilder());
+        dynamicContext.setCurrentTask(executeCommandEntity.getMessage());
+        dynamicContext.setValue("emitter", emitter);
+        dynamicContext.setValue("sessionId", executeCommandEntity.getSessionId());
+
+        try {
+            dynamicContext.setMaxPlanningSteps(resolveMaxPlanningSteps(executeCommandEntity.getMaxStep()));
+            String apply = executeHandler.apply(executeCommandEntity, dynamicContext);
+            log.info("流程执行结果:{}", apply);
+
+            AutoAgentExecuteResultEntity completeResult =
+                    AutoAgentExecuteResultEntity.createCompleteResult(
+                            executeCommandEntity.getSessionId()
+                    );
+            SseEmitterSupport.send(emitter, completeResult);
+        } catch (Exception e) {
+            if (SseConnectionClosedException.isCausedBy(e)) {
+                throw e;
+            }
+            log.error("Flow 执行失败", e);
+
+            AutoAgentExecuteResultEntity errorResult =
+                    AutoAgentExecuteResultEntity.createErrorResult(
+                            "流程执行失败：" + e.getMessage(),
+                            executeCommandEntity.getSessionId()
+                    );
+
+            SseEmitterSupport.send(emitter, errorResult);
+        }
+    }
+
+    public static int resolveMaxPlanningSteps(Integer requestedMaxStep) {
+        int maxPlanningSteps = requestedMaxStep == null
+                ? DEFAULT_MAX_PLANNING_STEPS
+                : requestedMaxStep;
+        if (maxPlanningSteps < MIN_MAX_PLANNING_STEPS || maxPlanningSteps > MAX_MAX_PLANNING_STEPS) {
+            throw new IllegalArgumentException(
+                    "Flow 最大规划步骤数必须在 " + MIN_MAX_PLANNING_STEPS
+                            + " 到 " + MAX_MAX_PLANNING_STEPS + " 之间"
+            );
+        }
+        return maxPlanningSteps;
+    }
+
+}

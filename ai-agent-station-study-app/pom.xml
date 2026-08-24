@@ -2,9 +2,9 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
     <parent>
-        <groupId>cn.moonice</groupId>
+        <groupId>cn.bugstack.ai</groupId>
         <artifactId>ai-agent-station-study</artifactId>
-        <version>1.0</version>
+        <version>1.0-SNAPSHOT</version>
     </parent>
 
     <artifactId>ai-agent-station-study-app</artifactId>
@@ -110,11 +110,11 @@
 
         <!-- 工程模块；启动依赖 trigger->domain, infrastructure-->
         <dependency>
-            <groupId>cn.moonice</groupId>
+            <groupId>cn.bugstack.ai</groupId>
             <artifactId>ai-agent-station-study-trigger</artifactId>
         </dependency>
         <dependency>
-            <groupId>cn.moonice</groupId>
+            <groupId>cn.bugstack.ai</groupId>
             <artifactId>ai-agent-station-study-infrastructure</artifactId>
         </dependency>
     </dependencies>
@@ -156,7 +156,7 @@
                 <groupId>org.springframework.boot</groupId>
                 <artifactId>spring-boot-maven-plugin</artifactId>
                 <configuration>
-                    <mainClass>cn.moonice.Application</mainClass>
+                    <mainClass>cn.bugstack.ai.Application</mainClass>
                     <layout>JAR</layout>
                 </configuration>
             </plugin>
