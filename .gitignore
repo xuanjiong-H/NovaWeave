@@ -49,3 +49,6 @@ config/.env.*
 /data/
 /ai-agent-station-study-app/data/
 *.log
+
+### docs ###
+/docs/
