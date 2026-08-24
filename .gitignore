@@ -37,3 +37,10 @@ build/
 ### Mac OS ###
 .DS_Store
 /.idea/
+
+### config ###
+config/.env.dev
+config/.env.prod
+config/.env.test
+config/.env.*
+!config/.env.*.example
