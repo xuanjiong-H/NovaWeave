@@ -44,3 +44,8 @@ config/.env.prod
 config/.env.test
 config/.env.*
 !config/.env.*.example
+
+### Runtime logs and generated data ###
+/data/
+/ai-agent-station-study-app/data/
+*.log
